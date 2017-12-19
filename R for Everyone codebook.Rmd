@@ -1,0 +1,49 @@
+
+R for Everyone Codebook 
+
+# Chapter4: Basic command
+## 4.2. Variable
+```{r}
+x<--2
+y=5
+assign("j",4)
+j
+```
+
+## 4.3 Data
+### 4.3.1 Numerical data
+
+```{r}
+class(x) #"numeric"
+is.numeric(x) #TRUE
+i<-5L #integer
+is.integer(i) #TRUE
+is.numeric(i) #TRUE
+class(4L) #integer
+class(2.8) #numeric
+```
+
+### 4.3.2 Text data
+```{r}
+x<-"data"
+y<-factor("data")
+y<-"data"
+class(x) #character
+nchar(x) #4 = number of character
+nchar(452) #3
+nchar(y) #error - y requires a character vector
+```
+
+### 4.3.3 date
+```{r}
+date1<-as.Date("2012-06-28")
+class(date1) #date
+as.numeric(date1) #15519
+
+date2<-as.POSIXct("2012-06-28 17:42")
+date2
+class(date2) #[1] "POSIXct" "POSIXt" 
+as.numeric(date2) #[1] 1340872920
+```
+
+
