@@ -240,7 +240,7 @@ theDF<-data.frame(x,y,q)
 theDF
 ```
 
-In the above code, 10~3 data.frame was formed. Each column name can be changed in the data.frame function.
+In the above code, 10*3 data.frame was formed. Each column name can be changed in the data.frame function.
 ```{r}
 theDF<-data.frame(First=x, Second=y, Sport=q)
 theDF
@@ -265,7 +265,7 @@ rownames(theDF)<-NULL
 rownames(theDF)
 ```
 
-head () function is useful for checking first few rows. class function () can be used to detect data.frame
+head () function is useful for checking first few rows. class function () can be used to detect data.frame.
 ```{r}
 head(theDF)
 head(theDF,n=7)
@@ -299,13 +299,32 @@ theDF[,3,drop=FALSE]
 class(theDF[,3,drop=FALSE])
 ```
 
-In section 4.4.2, factor is a special class, and we would like to confirm that such class can be exressed in data.frame as well.model.matrix() is used with indicator variables (dummy).This results in 1 in case such row includes such level, otherwise 0.
+In section 4.4.2, factor is a special class, and we would like to confirm that such class can be exressed in data.frame as well.
+- Model.matrix() is used with indicator variables (dummy).This results in 1 in case such row includes such level, otherwise 0.
 ```{r}
 
 ```
 
 ## 5.2 List
 
+## 5.3 Matrix
+matrix is a basic 
+
+## 5.4 Array
+Array is multidimentional vector. Array's components need to have same type. And [] can be used to access specific component,like Vector. In[], the first item is row number, second is column number etc. 
+
+The difference between matrix and array is that array can be used for non-limited dimension, while matrix is limited to second dimension.
+
+```{r}
+theArray<-array(1:12,dim=c(2,3,2))
+theArray
+```
+
+```{r}
+theArray[1,,]
+theArray[1,,1]
+theArray[,,1]
+```
 
 
 ---------------------------------
