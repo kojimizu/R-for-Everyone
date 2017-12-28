@@ -1,5 +1,22 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
 
 R for Everyone Codebook 
+Code review 
+Chap5: - 2017/12/25
+Chap6: 2017/12/25 - 
+Chap7: 
+
+
+- data()
+  - ggplot2: diamonds
+
+- function()
+  - XML: readHTMLTable, 
 
 ---------------------------------
 # Chapter4: Basic command
@@ -194,6 +211,7 @@ Missing value plays an important role for statistics and calculation. There are 
 
 ### 4.7.1 NA
 NA is shown as a component of vector. is.na() could test whether there is any missing value in vector.
+- is.na: test existence of missing value
 ```{r}
 z<-c(1,2,NA,8,3,NA,3)
 z
@@ -291,7 +309,7 @@ theDF["Sport"]
 class(theDF["Sport"])
 ```
 
-drop=FALSE is set if we want to extract noly one column data.frame with [].
+drop=FALSE is set if we want to extract only one column data.frame with [].
 ```{r}
 theDF[,"Sport",drop=FALSE]
 class(theDF[,"Sport",drop=FALSE])
@@ -302,16 +320,107 @@ class(theDF[,3,drop=FALSE])
 In section 4.4.2, factor is a special class, and we would like to confirm that such class can be exressed in data.frame as well.
 - Model.matrix() is used with indicator variables (dummy).This results in 1 in case such row includes such level, otherwise 0.
 ```{r}
-
+newFactor<-factor(c("Pennsylvania","New York","New JErsey","New York","Tennessee","Massachusetts","Pennsylvania","New York"))
+model.matrix(~newFactor-1)
 ```
 
 ## 5.2 List
+there is a case we need a List storing multiple types of objects.List can deal with numeric, character, both, and even data.frame.
+```{r}
+list(1,2,3) # three components
+list(c(1,2,3)) # one vector with three components
+
+list3<-list(c(1,2,3),3:7)
+# first: a vector with three comps
+# second: a vector with five comps
+
+list4<-list(theDF,1:10)
+list4
+# second: a vector with ten numbers
+```
+
+The list can be named with names() function. Use pair of name and figures when list is created to give name. 
+```{r}
+list5<-list(theDF, 1:10, list3)
+
+names(list5)
+names(list5)<-c("data.frame","vector","list")
+list5
+
+list6<-list(TheDataFrame=theDF, THeVector=1:10, TheList=list)
+names(list6)
+```
+
+Vector () function is used to make a ideal length of blank list. 
+```{r}
+(emptyList<-vector(mode="list",length=4))
+```
+
+To access each component of list, we should use [[]], and set number or name. By this function, only one item can be accessed.
+```{r}
+list5[[1]]
+list5[["data.frame"]]
+
+list5[[1]]$Sport
+list5[[1]][,"Second"]
+list5[[1]][,"Second",drop=FALSE]
+```
+
+To add new component to list, new syntax (number or name) is attached.
+```{r}
+length(list5)
+list5[[4]]<-2 #without name
+length(list5)
+
+list5[["NewElement"]]<-3:6
+list5
+```
+
 
 ## 5.3 Matrix
-matrix is a basic 
+Matrix is a basic mathmatical structure. There are row, column, similar to data.frame, however, all components are required to be same class/type in matrix. The most common matrix is numeric, and add/deduct/multiply/divide can e calculated. - nrow ()
+- ncol ()
+- dim () functions are available
+```{r}
+A<-matrix(1:10,nrow=5)
+B<-matrix(21:30,nrow=5)
+C<-matrix(21:40,nrow=2)
+A
+B
+C
+```
+
+```{r}
+# matrix basic calculation
+# To calculate A*B, A's column and B'row need to be indentical
+A+B
+A*B
+A==B
+```
+
+Transposed matrix can be calculated with t() function. 
+
+```{r}
+# Transposed matrix
+A %*% t(B)
+colnames(A)<-c("Left","Right")
+rownames(A)<-c("1st","2nd","3rd","4th","5th")
+colnames(B)<-c("First","second")
+rownames(B)<-c("One","Two","Three","Four","Five")
+
+colnames(C)<-LETTERS(1:10)
+rownames(C)<-c("Top","Bottom")
+```
+
+When matrix is transposed, we should be careful that row name and column name is conversed. 
+```{r}
+t(A) # A:5*2 C:2*5
+A %*% C
+```
+
 
 ## 5.4 Array
-Array is multidimentional vector. Array's components need to have same type. And [] can be used to access specific component,like Vector. In[], the first item is row number, second is column number etc. 
+Array is multidimentional vector. Array's components need to have same type. [] can be used to access specific component,like Vector. In[], the first item is row number, second is column number etc. 
 
 The difference between matrix and array is that array can be used for non-limited dimension, while matrix is limited to second dimension.
 
@@ -328,10 +437,123 @@ theArray[,,1]
 
 
 ---------------------------------
+# Chapter6: Loading data
+
+## 6.1. Loading CSV file
+CSV file can be easily loaded using read.table function. 
+- read.table(): if CSV is loaded as data.frame. 
+ - file: the file to be loaded
+ - header: Yes, if first row is column name
+ - sep: Mark to split data (",")
+ - stringAsFactors: FALSE to prevent make character column into factor column (character column is easier to deal as data)
+ 
+* stringAsFactors is used also for data.frame.
+
+```{r}
+theURL<-"http://www.jaredlander.com/data/Tomato%20First.csv"
+tomato<-read.table(file=theURL,head=TRUE,sep=",")
+head(tomato)
+```
+
+When we proces theDF data, the theDF$Sport is easier to analyze. There are multiple arguments available for read.table () function.
+- quote: used when data is labled with ""
+- colClasses:set each column's data class/type
+
+```{r}
+x<-10:1
+y<--4:5
+q<-c("Hockey","Football","Baseball","Curling","Rugby","Lacrosse","Basketball","Tennis","Cricket","Soccer")
+theDF<-data.frame(First=x,Second=y,Sport=q,stringAsFactors=FALSE)
+theDF$Sport
+```
+
+In case where CSV file uses ,(‹æØ•¶Žš) in each data.
+- read.csv2(or read.delim2)
+
+## 6.2. Loading Excel data
+The easiest way to load excel file is to transform excel to CSV file. Even though there are packages such as gdata, XLConnect, xlsReadWrite, these packages require JAVA/Perl.
+
+## 6.3. Loading from Database
+Most database provides ODBC connectin, for instance, Mocrosoft SQL server, DB2, MySQL, Miscrosoft Access. Thus, R allows ODBC by RODBC package. 
+
+(1) Construct DSN: 
+DSN is constructed as sentence for odbcConnect ().
+- argument uid
+- password
+(2) 
+
+```{r}
+install.packages("RODBC")
+require(RODBC)
+db<-odbcConnect("QV Training")
+```
+
+By the above command, we are read to run query on database. sqlQuery () function is used, and very usefl for any complet SQL query. sqlQuery provides data.frame, and has a stringAsFactors as its argument. 
+```{r}
+# simple select
+ordersTable<-sqlQuery(db,"SELECT*FROM Orders",
+                      stringsAsFactors=FALSE)
+detailsTable<-sqlQuery(db, "SELECT*FROM[Order Details",
+                      stringsAsFactors=FALSE)
+# join two tables
+longQuery<-"SELECT * FROM Orders, [Order Details]
+WHERE Orders.ORderID = [Order Details].OrderID"
+detailsJoin<-sqlQuery(db, longQuery, stringsAsFactors=FALSE)
+
+head(ordersTable)
+head(detailsTable)
+heead(detailsJoin)
+```
+
+## 6.5 R Binary File
+RData file is useful to transfer data to another R programmer. RData file is a binary file as a object or multiple pbjects, and can be transfered through Windows, Mac, Linux.
+
+```{r}
+# save tomato data.frame
+save(tomato,file="C:/Users/kojikm.mizumura/Desktop/Data Science/‚Ý‚ñ‚È‚ÌR/tomato.rdata")
+rm(tomato)
+head(tomato)
+load("C:/Users/kojikm.mizumura/Desktop/Data Science/‚Ý‚ñ‚È‚ÌR/tomato.rdata")
+head(tomato)
+
+n<-20
+r<-1:10
+save(n,r,w,file="C:/Users/kojikm.mizumura/Desktop/Data Science/‚Ý‚ñ‚È‚ÌR/3. Dataset/multiple.rdata")
+rm(n,r,w)
+load("C:/Users/kojikm.mizumura/Desktop/Data Science/‚Ý‚ñ‚È‚ÌR/3. Dataset/multiple.rdata")
+```
+
+## 6.6 Default Packages
+To check available default datasets in each package, data() function is useful.
+  
+```{r}
+data()
+```
+
+##6.7 Webscraping
+
+readHTMLTable () function:
+- which: pick which table in case there are multiple tables
+- Header: No, in case there no header in table
+- stringAsFactors: FALSE not to make character column into factor
+
+```{r}
+install.packages("XML")
+require(XML)
+theURL1<-"https://www.jaredlander.com/2012/02/another-kind-of-super-bowl-pool/"
+bowlPool<-readHTMLTable(theURL1, which=1, header=FALSE,
+                        stringsAsFactors=FALSE)
+bowlPool
+```
+
+
+---------------------------------
 # Chap7: Statistical Graph
 ## 7.1 Basic graphics
 
 ### 7.1.1. Histogram
+Basic graph for one variable is histogram. 
+- diamonds dataset: distribution by Carat
 ```{r}
 require(ggplot2)
 data(diamonds)
@@ -344,19 +566,26 @@ hist(diamonds$carat, main="Carat Histgram",xlab="Carat")
 
 
 ### 7.1.2 Scatterplot
+Scatterplot is useful to plot two variables 
+- diamonds dataset: 
 ```{r}
 plot(price~carat, data=diamonds)
 plot(diamonds$carat, diamonds$price)
 ```
 
 ### 7.1.3 Boxplot
+The Box plot shows 1st and 3rd quartile (50% range from center is ciculated)
 ```{r}
 boxplot(diamonds$carat)
 ```
 
 ## 7.2 ggplot2
 ###7.2.1 Histgraom Density chart by ggplot
+ggplot has a complex syntax (structure), but allows user to dipict by size,shape, color etc. 
+
 ```{r}
+install.packages("ggplot2")
+require(ggplot2)
 ggplot(data=diamonds)+geom_histogram(aes(x=carat))
 ```
 
@@ -373,21 +602,294 @@ g+geom_point(aes(color=color))+facet_wrap(~color)
 g+geom_point(aes(color=color))+facet_grid(cut~clarity)
 ```
 
-### 7.2.3 Boxplot by ggplot
+### 7.2.3 Boxplot / Violin-plot by ggplot
+Violin plot is simiar to boxplot, but provides more information than boxplot. By using violin plot, we can depict multiple layers (geoms) at the same chart.
 ```{r}
 ggplot(diamonds, aes(y=carat, x=1))+geom_boxplot()
 ggplot(diamonds, aes(y=carat,x=cut))+geom_boxplot()
+
+ggplot(diamonds, aes(y=carat,x=cut))+geom_violin()
+ggplot(diamonds,aes(y=carat,x=cut))+geom_point()+geom_violin()
+ggplot(diamonds,aes(y=carat,x=cut))+geom_point()+geom_point()
+```
+
+### 7.2.4 Line by ggplot
+
+ggplot2 depicts economics pop line by identifying date data.
+However, there are cases we need to input aes(group=1) for geom_line(). 
+
+```{r}
+head(economics)
+ggplot(economics,aes(x=date,y=pop))+geom_line()
+```
+
+---------------------------------------
+# Chap8: Write R Function
+
+## 8.1 Hello World
+simple function to show "Hello, World".
+- perod (.) does not have a special meaning
+- Similar other arguments, "<-" assigns function to object same as variabile
+```{r}
+say.hello<-function()
+{
+  print("Hello, World!")
+}
+```
+
+## 8.2 Argument of function
+sprintf () function 
+- first argument:special input word
+- second argument:next word
+```{r}
+sprintf("Hello %s", "Jared") # one word
+sprintf("Hello %s, today is %s", "Jared","Sunday") # two words
+
+hello.person<-function(name)
+{
+  print(sprintf("Hello %s",name))
+}
+hello.person("Jared")
+hello.person("Bob")
+hello.person("Sarah")
+```
+
+Argument can be used as a variable in function, and can be treated same as other variables and argument to further call for another function inside the function.
+```{r}
+hello.person<-function(first,last)
+{
+  print(sprintf("Hello %s %s",first, last))
+}
+
+# set by position
+hello.person("Jared","LAnder")
+# set by name
+hello.person(first="Jared",last="Lander")
+# set by name in oppostite
+hello.person(last="Lander", first="Jared")
+# set by one name
+hello.person("Jared",last="Lander")
+hello.person(first="Jared","Lander")
+hello.person(last="Lander","Jared")
+```
+
+### 8.2.1 Default argument
+R has a default setting for multiple arguments (no need to set argument individually). 
+
+```{r}
+hello.person<-function(first,last="Doe")
+{
+  print(sprintf("Hello %s %s", first, last))
+}
+hello.person("Jared") #not set last name
+hello.person("Jared","Lander") #set different last name
 ```
 
 
+### 8.2.2 Additional argument 
+R has a special operator ("‰‰ŽZŽq", "..."") allow function to take arguments not needed for defining function.
+```{r}
+# Additional argument
+hello.person("Jared",extra="Goodbye") #error
+
+# two effective arguments, extract third argument
+hello.person("Jared","Lander","Goodbye")
+
+hello.person<-function(first,last="Doe",...)
+{
+  print(sprintf("Hello %s %s",first,last))
+}
+hello.person("Jared",extra="Goodbye")
+hello.person("Jared","Lander","Goodbye")
+```
+
+## 8.3 Return value
+Function is generally used to calculate some values, and needs mechanism to retrun calculation results back to function.
+
+There are two methods for R
+- (1) return last row value automatically
+- (2) use return command to select which value to be returned/which function to be closed (finished)
+
+```{r}
+# make function without specific definition
+double.num<-function(x)
+{ x*2}
+double.num(5)
+
+# define return mechanism
+double.num<-function(x)
+{return(x*2)}
+double.num(5)
+
+# additional argument of 17 after return x* value / x*2 function is already over, and the code was not conducted
+double.num<-function(x)
+{return(x*2)
+  print("Hello!")
+  return(17)}
+double.num(5)
+```
+
+## 8.4 do.call
+do.call () function is used to set name of function (not frequently used).List is used to set arguments.
+
+```{r}
+do.call("hello.person",args=list(first="Jared",last="Lander"))
+do.call(hello.person,args=list(first="Jared",last="Lander"))
+
+run.this<-function(x,func=mean)
+{
+  do.call(func,args=list(x))
+}
+run.this(1:10,mean) #set average
+run.this(1:10,sum) #set sum
+run.this(1:10,sd) #set sd
+```
 
 
+---------------------------------------
+# Chapter9: Control Sentence
+Control sentence controls program and allows different codes based on test result (e.g., logic, TRUE, FALSE). Main control sentences are as follows.
+- if
+- else
+- ifelse
+- switch
+
+## 9.1 if and else
+```{r}
+as.numeric(TRUE)
+as.numeric(FALSE)
+
+1==1
+1<1
+1>=1
+1!=1
+
+# if sentence to control this test
+toCheck<-2
+if(toCheck==1)
+{
+  print("hello")
+}
+
+```
 
 
+if sentence is close to function in terms that all sentences are within (). We define else sentence in case the the situation is FALSE circumustance. 
+- TRUE: works as 1 (TRUE)
+```{r}
+check.bool<-function(x)
+{
+  if(x==1)
+  {
+    print("hello") # if x=1, "Hello"
+  } else
+  {
+    print("goodbye") #otherwise "goodbye"
+  }
+}
+check.bool(1)
+check.bool("k")
+check.bool(TRUE)
+```
+
+In case of testing multiple options, we use else if () respectvely. 
+```{r}
+check.bool<-function(x)
+{
+  if(x==1)
+  {
+    print("Hello")
+  }else if (x==0)
+  {
+    print("Confused")
+  }else
+  {
+    print("Unknown")
+  }
+}
+check.bool(1)
+check.bool(0)
+check.bool("k")
+```
+
+## 9.2 Switch 
+When we test multiple options , switch would be more useful than else if 
+- first argument: values to be tested
+- second argument: option values, results
+```{r}
+use.switch<-function(x)
+{
+  switch(x,
+         "a"="first",
+         "b"="second",
+         "z"="last",
+         "c"="third",
+         "other")
+}
+use.switch("a")
+use.switch("e")
+```
+
+When the first argument is numerical, order of the first argument is used instead of name of the first argument. 
+```{r}
+use.switch(1)
+use.switch(4)
+```
+
+## 9.3. ifelse
+ifelse is close to if function in excel.
+- first: condition to be tested
+- second: returned value when the test is TRUE
+- third: returned value whenthe test is FALSE
+```{r}
+# test whether 1=1
+ifelse(1==1, "Yes","No")
+ifelse(1==0, "Yes","No")
+toTest<-c(1,1,0,1,0,1)
+ifelse(toTest==1, "Yes","No")
+
+# we can access element of first argument (test value)
+ifelse(toTest==1, toTest*3, toTest)
+ifelse(toTest==1, toTest*3, "Zero")
+
+# NA value
+toTest[2]<-NA
+toTest
+ifelse(toTest==1, "Yes","No")
+ifelse(toTest==1, toTest*3, toTest)
+ifelse(toTest==1, toTest*3, toTest)
+ifelse(toTest==1, toTest*3, "ZERO")
+```
+
+## 9.4 Multiple tests
+
+When testing multiple conditions, double expressin (e.g.,&&, ||) are used in the same if sentence.The expression "and" (multiply) is priotized against "or" (add).
+
+```{r}
+a<-c(1,1,0,1)
+b<-c(2,1,0,1)
+# check condtion a and b respectively
+ifelse(a==1 & b==1, "Yes", "No")
+# check condition a and b as one condition
+ifelse(a==1 && b==1, "Yes", "No")
+```
 
 
+# Chapter10: Loop
+R beginners often use vector, list, data.frame with loop functions. It is desirable to use vecotrized coding, but the below outlines for loop, while loop functions.
 
+## 10.1 For Loop
 
+For loop function is most frequently used. 
+- for loop: iterate process for index (vector)
+
+```{r}
+for (i in 1:10)
+{print(i)}
+
+# print () function (vectorized) works for the same results 
+print(1:10)
+```
 
 
 
