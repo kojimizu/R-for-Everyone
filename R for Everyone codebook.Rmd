@@ -10,7 +10,8 @@ Code review
 Chap5: - 2017/12/25
 Chap6: 2017/12/25 - 
 Chap7: 
-
+Chap11: 1/5
+Chap12: 1/6
 
 - data()
   - ggplot2: diamonds
@@ -20,8 +21,8 @@ Chap7:
 
 ---------------------------------
 # Chapter4: Basic command
+## 4.1 Basics
 ## 4.2. Variable
-
 ```{r}
 x<--2
 y=5
@@ -31,7 +32,6 @@ j
 
 ## 4.3 Data
 ### 4.3.1 Numerical data
-
 ```{r}
 class(x) #"numeric"
 is.numeric(x) #TRUE
@@ -43,7 +43,6 @@ class(2.8) #numeric
 ```
 
 ### 4.3.2 Text data
-
 ```{r}
 x<-"data"
 y<-factor("data")
@@ -55,7 +54,6 @@ nchar(y) #error - y requires a character vector
 ```
 
 ### 4.3.3 date
-
 ```{r}
 date1<-as.Date("2012-06-28")
 class(date1) #date
@@ -75,7 +73,6 @@ class(as.numeric(date1)) #numeric
 ```
 
 ### 4.3.4 Logical 
-
 logical is binary values eithrer TRUE(1) or FALSE (0)
 ```{r}
 TRUE*5 #5
@@ -93,11 +90,9 @@ class("data")
 
 ```
 
-#4.4 Vector
-##4.4.1 vector calculation
-
+## 4.4 Vector
+### 4.4.1 vector calculation
 We set the basic vector, and can calculate sum/deduct/devide without loop.
-
 ```{r}
 x<-c(1,2,3,4,5,6)
 x+2
@@ -115,7 +110,6 @@ c is the function to create a vector, and we can use ":" operator, to calculate 
 ```
 
 Vector operator can be expanded (e.g., there are two vectors with same length, and computation of each vector components once).
-
 ```{r}
 x<-1:10
 y<--5:4
@@ -154,7 +148,6 @@ nchar(y)
 ```
 
 To access vector coponent, [] is used. To extract first component of x vector, x[1], x[1:2] for first two components. If components to be extracted are not sequential, x[c(1.4)] expression is usefl.
-
 ```{r}
 x[1]
 x[1:2]
@@ -172,7 +165,6 @@ w
 ### 4.4.2 Factor vector
 Factor is a crucial concept to construct a model.
 First, we add additional components to the vector q.
-
 ```{r}
 q2<-c(q,"Hockey","LAcrosse","Hockey","Water Polo",
       "Hockey","LAcrosse")
@@ -199,7 +191,7 @@ factor(x=c("High School","College","Masters","Doctorate"),
 
 Factor keeps identical items, we could reduce size of variables.
 
-#4.6 Function command
+## 4.6 Function command
 apropos() is useful to search specific function by keyword
 ```{r}
 apropos("mea")
@@ -240,7 +232,6 @@ d<-NULL
 is.null(d)
 is.null(7)
 ```
-
 
 ---------------------------------
 #Chapter 5: High level data structure
@@ -545,7 +536,6 @@ bowlPool<-readHTMLTable(theURL1, which=1, header=FALSE,
                         stringsAsFactors=FALSE)
 bowlPool
 ```
-
 
 ---------------------------------
 # Chap7: Statistical Graph
@@ -874,7 +864,7 @@ ifelse(a==1 & b==1, "Yes", "No")
 ifelse(a==1 && b==1, "Yes", "No")
 ```
 
-
+-----------------------
 # Chapter10: Loop
 R beginners often use vector, list, data.frame with loop functions. It is desirable to use vecotrized coding, but the below outlines for loop, while loop functions.
 
@@ -890,6 +880,505 @@ for (i in 1:10)
 # print () function (vectorized) works for the same results 
 print(1:10)
 ```
+
+For loop function works for any value/inputs.
+```{r}
+# vector listing fruit name
+fruit<-c("apple","banana","pomegranate")
+fruitLength<-rep(NA,length(fruit))
+fruitLength
+# [1] NA NA NA
+
+names(fruitLength)<-fruit
+fruitLength
+
+for(x in fruit)
+{fruitLength[x] <-nchar(x)}
+fruitLength
+```
+
+The above can be accomplished by a vectorized function in R. 
+```{r}
+fruitLength2<-nchar(fruit)
+names(fruitLength2)<-fruit
+fruitLength2
+identical(fruitLength,fruitLength2)
+```
+
+## 10.2 While Loop
+It is easy to implement While Loop as well as For Loop, as the While Loop iterates the parenthis until condition is TRUE/satisfied.
+```{r}
+x<-1
+while(x<=5)
+{
+  print(x)
+  x<-x+1
+}
+```
+
+## 10.3 Loop control
+Next/Break are used in R to control iteration process of loop.
+```{r}
+## 3 is not generated as output
+for (i in 1:10)
+{
+  if (i==3)
+  {
+    next
+  }
+    print(i)
+}
+```
+
+The process is stopped at 3 by settung break argument 
+```{r}
+for (i in 1:10)
+{
+  if (i==4)
+  {
+    break
+  }
+  print(i)
+}
+```
+
+------------------------
+# Chapter11: Grouping control
+We must spend most time to process data, and there are multiple useful functions as follows. 
+
+## 11.1 Apply family
+- tapply 
+- lapply 
+- sapply 
+- mapply 
+
+### 11.1.1 Apply
+The most limited function which can be applied to matrix only with categorical/numeric/logic. 
+* If apply function is applied to data.frame, it is converted to matrix. 
+
+- first argument: data object
+- second argument: margin to be applied to function (1: row, 2: column, 3: function, 4: additional conditions to function operation). 
+
+The apply function iterates processing each row (column) by applying its function to it as independent input.
+
+```{r}
+theMatrix<-matrix(1:9, nrow=3)
+
+# apply to sum by row 
+apply(theMatrix, 1, sum)
+# apply to sum by column 
+apply(theMatrix, 2, sum)
+
+# the above calculation can be simplified by using rowSums, colSums functions. 
+rowSums(theMatrix)
+colSums(theMatrix)
+```
+
+We check NA values (#Œ‡‘¹’l) in apply function.
+
+```{r}
+theMatrix[2,1]<-NA
+apply(theMatrix,1,sum)
+apply(theMatrix,1,sum,na.rm=TRUE)
+rowSums(theMatrix)
+rowSums(theMatrix, na.rm=TRUE)
+```
+
+## 11.1.2 lapply/sapply
+
+- lapply: apply function to each element of list, and return the results as list.
+```{r}
+theList<-list(A=matrix(1:9,3),B=1:5,C=matrix(1:4,2),D=2)
+lapply(theList, sum)
+```
+
+- sapply: returns lapply results by vector (this is identical to sapply except for output type).
+```{r}
+sapply(theList, sum)
+
+theNames<-c("Jared","Deb","Paul")
+lapply(theNames, nchar)
+```
+
+### 11.1.3 mapply
+- mapply: apply selected function to each element of multiple lists (unfortunately, we might try to use loop function, being unware of mapply).
+```{r}
+# prepare two lists
+FirstList<-list(A=matrix(1:16,4), B=matrix(1:16,2),C=1:5)
+SecondList<-list(A=matrix(1:16,4),B=matrix(1:16,8),C=15:1)
+
+# check whether element matches  between both lists
+mapply(identical, FirstList, SecondList)
+
+# define function
+simpleFunc<-function(x,y)
+{NROW(x)+NROW(y)}
+
+#apply function
+mapply(simpleFunc, FirstList, SecondList)
+
+```
+
+### 11.1.4 Other apply function
+There are other functions (eg, tapply,rapply,eapply,vapply,by), but replaced by plyr package.
+
+## 11.2 Aggregate
+Aggregate function is used fro grouping operation etc.
+- dataset:diamonds (ggplot library)
+
+Example as below
+- First argument: 
+- Second argument: data
+- Third argument: function to be applied
+```{r}
+require(ggplot2)
+data(diamonds)
+head(diamonds)
+aggregate(price~cut, diamonds, mean)
+```
+
+In the first argument, we set price to be aggregated by cut. The data is given as second argument, thus onl column names are input as the first argument.
+
+When we group a data by multiple variabiles, symbol "+" is added. However, we need to bind variables by cbind() function, when we want to group two variables.
+```{r}
+aggregate(price~cut+color,diamonds,mean)
+aggregate(cbind(price, carat)~cut, diamonds,mean)
+```
+
+The above function gives us mean value for price and carat by cut category. When we apply multiple functions, plyr package is preferable. 
+
+```{r}
+aggregate(cbind(price,carat)~cut+color,diamonds,mean)
+```
+
+## 11.3 plyr
+The core functions of plyr package are ddply, llply and ldply.
+- First letter:input data class
+- Second letter: output data class
+
+ddply(data-data.frame), llply(data-list), ldply(input-list,output-data.frame)
+
+Function | input | output
+:---------|:---------:|---------:
+ddply|data.frame|data.frame
+llapply|list|list
+aapply|array/vector/matrix|array/vector/matrix
+dlply||data.frame|list
+
+### 11.3.1 ddply
+- dataset:baseball (plyr package)
+```{r}
+require(plyr)
+head(baseball)
+```
+
+The statistics OBP (On Base Percentage) is caculaged as OBP = (H+BB+HBP) / (AB+BB+HBP+SF)
+- H: Hit
+- BB: Four Ball
+- HBP: Dead ball
+- AB: At Bat (Dasuu)
+- SF: Sacrifice fly (Gisei Fly)
+
+```{r}
+
+# Transforms NA in sf to 0
+baseball$sf[baseball$year<1954]<-0
+any(is.na(baseball$sf))
+
+# Transforms NA in HBP to 0
+baseball$hbp[is.na(baseball$hbp)]<-0
+any(is.na(baseball$hbp))
+
+# Picks palyers with more tha 50 ABs
+baseball<-baseball[baseball$ab>=50,]
+
+# Calculate OBP (On Base Percentage)
+baseball$OBP<-with(baseball,(h+bb+hbp)/(ab+bb+hbp+sf))
+tail(baseball)
+```
+
+The with() function is used to refer specific columns within data.frame. However, when we calculate lifetime OBP for each player, we need to sum numerator/denominator figures first.
+
+We define function and use ddply for calculating lifetime OBP per player. 
+
+```{r}
+# We assume that the below column names are defined in dataset.
+obp<-function(data)
+{c(OBP=with(data,sum(h+bb+hbp)/sum(ab+bb+hbp+sf)))}
+
+# apply ddply to calculate lifetime OBP per player
+careerOBP<-ddply(baseball, .variables="id",.fun=obp)
+
+#Change order by Lifetime OBP ratio
+careerOBP<-careerOBP[order(careerOBP$OBP,decreasing=TRUE),]
+head(careerOBP,10)
+```
+
+### 11.3.2 llply
+
+We can use llply to calculate sum of elements in each list.
+```{r}
+theList<-list(A=matrix(1:9,3), B=1:5,C=matrix(1:4,2),D=2)
+laply(theList, sum)
+
+llply(theList, sum)
+identical(lapply(theList,sum),llply(theList,sum))
+```
+
+laply() function can be used to return results by vector, as well as sapply() function.
+```{r}
+sapply(theList, sum)
+laply(theList,sum)
+```
+
+### 11.3.3 Plyr helper function
+Plyr has multiple help functions such as each() function for aggregate() function.
+```{r}
+require(ggplot2)
+aggregate(price ~ cut, diamonds,each(mean,median))
+```
+
+The other useful function is idata.frame() function. This function refers data frame for rapid operation.
+```{r}
+system.time(dlply(baseball,"id",nrow))
+iBaseball<-idata.frame(baseball)
+system.time(dlply(iBaseball,"id",nrow))
+```
+
+Sometimes, plyr is criticized fro its slow operation. 
+
+## 11.4 Data.table
+For speedy operation, data.table  package is used by expanding data.frame functionality.The syntax is different from regular data.frame.Data.table enables us to access/grouping/combine(JOIN) data rapidly.  
+```{r}
+install.packages("data.table")
+require(data.table)
+theDF<-data.frame(A=1:10,
+                  B=letters[1:10],
+                  C=LETTERS[11:20],
+                  D=rep(c("One","Two","Three"), length.out=10))
+theDT<-data.table(A=1:10,
+                  B=letters[1:10],
+                  C=LETTERS[11:20],
+                  D=rep(c("One","Two","Three"), length.out=10))
+
+theDF
+theDT
+
+# Default: data.frame(factor), data.table(character)
+class(theDF$B)
+class(theDT$B)
+```
+
+The data in data.frame and data.table is identical except for the different data class. Data table can be generated from existing data.frame.
+```{r}
+diamondsDT<-data.table(diamonds)
+diamondsDT
+
+theDT[1:2,]
+theDT[theDT$A>=7,]
+```
+
+In section 5.1, multiple columns are set as vector of character for data.frame. As for data.table, columns are selected as column name.
+```{r}
+theDT[,list(A,C)]
+
+# One column
+theDT[,B]
+
+# On column keeping data.table structure
+theDT[,list(B)]
+
+# in case we set column name without list, we put with argument as FALSE.
+theDT[,"B",with=FALSE]
+theDT[,c("A","C"),with=FALSE]
+```
+
+### 11.4.1 Key
+data.table are stoted on memory, and can be checked by data.table () function.
+
+```{r}
+# Show table
+tables()
+```
+
+We input key for theDT table, by putting data.table. 
+- setkey(): key setting
+ - first: data.table to be used
+ - second: column to be used
+
+```{r}
+# set key
+setkey(theDT,D)
+theDT
+
+key(theDT)
+tables()
+```
+
+By setting key function, we can utilize new approach to select rows from data.table. In addition to row number, TRU/FALSE, we can utlize column values set as key.
+```{r}
+theDT["One",]
+theDT[c("One","Two"),]
+```
+
+Multiple columns are set as key. There is a specific functiona named J(), and we input multiple arguments.
+- J()
+```{r}
+setkey(diamondsDT,cut,color)
+
+# try order change
+diamondsDT<-diamondsDT[order(diamondsDT$color,decreasing=TRUE),]
+
+# J function to select multiple columns with keys
+diamondsDT[J("Ideal","E")]
+```
+
+### 11.4.2 data.table aggregation
+```{r}
+aggregate(price~cut, diamonds,mean)
+diamondsDT[,mean(price),by=cut]
+diamondsDT[,list(price=mean(price)),by=cut]
+
+# columns are set by list when we aggregate multiple columns
+diamondsDT[,mean(price),by=list(cut,color)]
+
+# aggreation of multiple arguments
+diamondsDT[,list(price=mean(price),carat=mean(carat),by=cut)]
+
+diamondsDT[,list(price=mean(price),carat=mean(carat),
+                 caratSum=sum(carat)),by=cut]
+```
+
+Lastly, we set multiple agrregation / multiple grouping variables simultaneously.
+```{r}
+diamondsDT[,list(price=mean(price),carat=mean(carat)),
+           by=list(cut,color)]
+```
+
+
+----------------------------------------------------
+
+# Chapter 12: Data processing 
+Data processing/cleaning to change the structure of data (row-based, column-based), or generate dataset from multiple data sources. 
+- plyr
+- reshape2
+- data.table 
+
+## 12.1 cbind and r bind
+
+We would combine two vectors in data.frame format by cbind function, and accumulate data on row-base by rbind function. 
+- cbind()
+- rbind()
+```{r}
+# create two vectors and combine both by data.frame
+
+#trophies1
+sport<-c("Hockey","Baseball","Football")
+league<-c("NHL","MLB","NFL")
+trophy<-c("Stanley Cup","Commissioners Trophy", "Vince Lombardi Trophy")
+trophies1<-cbind(sport,league,trophy)
+
+trophies2<-data.frame(sport=c("Bascketball","Golf"), league=c("NBA","PGA"),trophy=c("Larry OBrien Championship Trophy", "Wanamaker Trophy"),stringsAsFactors = TRUE)
+
+# combine both vectors (data.frame) by rbind() function.
+
+trophies1
+trophies2
+trophies<-rbind(trophies1,trophies2)
+```
+
+
+multiple arguments are set to combine any number of objects together with cbind(), rbind() functions. 
+- cbind(): we can change name of column of vectors in the argument.
+```{r}
+cbind(Sport=sport, Association=league, Prize=trophy)
+```
+
+
+## 12.2 Join 
+
+Data is not ordered for simply combining by cbind() function. Thus, we need to comnine data by using key.
+
+The most common data comine functions are
+- merge(baseR package)
+- join (plyr package)
+- merge function of data.table
+
+The exampke: csv files from USAID Open Government Initiative
+
+```{r}
+download.file(url="http://jaredlander.com/data/US_Foreign_Aid.zip",destfile="C:/Users/kojikm.mizumura/Desktop/Data Science/2. ‚Ý‚ñ‚È‚ÌR/ForeignAid.zip")
+unzip("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ‚Ý‚ñ‚È‚ÌR/ForeignAid.zip", exdir="data")
+```
+
+To load all csv files, we use for loop() function. We obtain list of files by dir function. We assign name to each data by assign() function.
+- for loop():
+- dir():
+
+```{r}
+require(stringr)
+
+# obtain list of files
+theFiles<-dir("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ‚Ý‚ñ‚È‚ÌR/data/",pattern="nn.csv")
+
+# apply loop processing for these files
+for (a in theFiles)
+{
+  #create name to be assigned to data
+  nameToUse<-str_sub(string=a,start=12,end=18)
+  # read.table() to load csv file
+  # file.path() is for generating file path setting file and folder name
+  temp<-read.table(file=file.path("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ‚Ý‚ñ‚È‚ÌR/data",a),header=TRUE,sep=",",stringsAsFactors = FALSE)
+  #R workspace gets variables (R‚Ìworkspace‚É•Ï”‚ðŠ„‚è“–‚Ä‚é)
+  assign(x=nameToUse,value=temp)
+  }
+
+```
+
+### 12.2.1 Merge
+Merge() function is used to combine two data.frame.
+- by.x argument:set key for the left data.frame 
+- by.y argument:set key for the right data.frame
+
+However, merge() function is very slow compared with other similar functions.
+
+```{r}
+Aid90s00s<-merge(x=Aid_90s,y=Aid_00s,
+                 by.x=c("Country.Name","Program.Name"),
+                 by.y=c("Country.Name","Program.Name"))
+head(Aids90s00s)
+```
+
+### 12.2.2 plyr join by Hadley Wickam
+
+join() function (plyr package)
+```{r}
+require(plyr)
+
+
+```
+
+
+## 12.3 reshape2
+
+
+
+## 12.4 summary
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
