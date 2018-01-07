@@ -12,6 +12,8 @@ Chap6: 2017/12/25 -
 Chap7: 
 Chap11: 1/5
 Chap12: 1/6
+Chap13: 1/7
+Chap14: 
 
 - data()
   - ggplot2: diamonds
@@ -1316,11 +1318,9 @@ To load all csv files, we use for loop() function. We obtain list of files by di
 - dir():
 
 ```{r}
-require(stringr)
-
+library(stringr)
 # obtain list of files
-theFiles<-dir("C:/Users/kojikm.mizumura/Desktop/Data Science/2. みんなのR/data/",pattern="nn.csv")
-
+theFiles<-dir("C:/Users/kojikm.mizumura/Desktop/Data Science/2. みんなのR/data", pattern="\\.csv")
 # apply loop processing for these files
 for (a in theFiles)
 {
@@ -1330,9 +1330,7 @@ for (a in theFiles)
   # file.path() is for generating file path setting file and folder name
   temp<-read.table(file=file.path("C:/Users/kojikm.mizumura/Desktop/Data Science/2. みんなのR/data",a),header=TRUE,sep=",",stringsAsFactors = FALSE)
   #R workspace gets variables (Rのworkspaceに変数を割り当てる)
-  assign(x=nameToUse,value=temp)
-  }
-
+  assign(x=nameToUse,value=temp)  }
 ```
 
 ### 12.2.1 Merge
@@ -1346,34 +1344,405 @@ However, merge() function is very slow compared with other similar functions.
 Aid90s00s<-merge(x=Aid_90s,y=Aid_00s,
                  by.x=c("Country.Name","Program.Name"),
                  by.y=c("Country.Name","Program.Name"))
-head(Aids90s00s)
+head(Aid90s00s)
 ```
 
 ### 12.2.2 plyr join by Hadley Wickam
 
-join() function (plyr package)
+join() function (plyr package) works same as merge() function. However, one disadvantage is thatr key for each table needs to be indentical for combination.
+
 ```{r}
 require(plyr)
+Aid90s00sJoin<-join(x=Aid_90s,y=Aid_00s,by=c("Country.Name","Program.Name"))
+head(Aid90s00sJoin)
+```
 
+Join() function sets types of Join, combination as arguments.
+
+Currently, we have eight data.frame, and examine how to comine them toone data.frame. The quickest way is to store all data.frames as list, and combine element of the list by Reduce() function.
+```{r}
+
+# first figure out names of the data.frames
+frameNames<-str_sub(string=theFiles,start=12,end=18)
+# build an empty list
+frameList<-vector("list",length(frameNames))
+names(frameList)<-frameNames
+
+# add each data.frame into the list
+for (a in frameNames)
+{
+  frameList[[a]]<-eval(parse(text=a))
+}
+
+head(frameList[[1]])
+head(frameList[["Aid_00s"]])
+head(frameList[[5]])
+```
+
+- str.sub(): generate data.frame name (stringr package)
+- parse
+- evaluation
+
+By storing all data.frames in the list, we can iterates process to the list, which enables to combine all elements at the sametime. 
+```{r}
+allAid<-Reduce(function(...)
+{
+  join(...,by=c("Country.Name","Program.Name"))},frameList)
+dim(allAid)
+
+require(useful)
+corner(allAid, c=15)
+bottomleft(allAid,c=15)
+```
+
+Reduce() function illustates the below  example: 
+- we wants to merge a vector consisting of 1:10. We can use reduce() function such as Reduce (sum,1:10)
+- In the above code, we used reduce to make two data frames as list and join. The result is combined as data.frame.
+
+### 12.2.3 data.table merge
+
+we transform data.frame to data.table, and 
+can apply join() function, as we have set keys for data.table.
+
+```{r}
+require(data.table)
+dt90<-data.table(Aid_90s,key=c("Country.Name","Program.Name"))
+dt00<-data.table(Aid_00s,key=c("Country.Name","Program.Name"))
+
+dt0090<-dt90[dt00]
+```
+
+## 12.3 reshape2
+Data melt (transforms data from column-based to row-based), and data cast (opposite transformation) is common data processing. 
+- reshaping2 package
+
+### 12.3.1 melt
+
+In the Aid_00s data.frame, each year's date is stored on diferent columns (cross table format).
+
+As this cross-table format is not desirable for data analytics algorithm, we need to process data so that each row has country-program-yearly amount.
+- melt() function: reshape2 package
+ - id.vars argument: set ID (identified variable)
+```{r}
+head(Aid_00s)
+
+require(reshape2)
+melt00<-melt(Aid_00s,id.vars=c("Country.Name","Program.Name"),variable.name="Year",value.name="Dollars")
+tail(melt00,10)
 
 ```
 
+Year column is altered/aggreagated, and time dependency of each support program's accumulation can be illustrated easily.
 
-## 12.3 reshape2
+```{r}
+require(scales)
+
+# Take out FY from Year column and channge it to numeric
+melt00$Year<-as.numeric(str_sub(melt00$Year,start=3,end=6))
+
+# aggreation process for calculating each support program's amount on yearly basis
+meltAgg<-aggregate(Dollars~Program.Name+Year, data=melt00,sum,na.rm=TRUE)
+head(meltAgg)
+
+# take first 10 letters for each support program
+meltAgg$Program.Name<-str_sub(meltAgg$Program.Name,start=1,end=10)
+
+ggplot(meltAgg, aes(x=Year, y=Dollars))+
+  geom_line(aes(group=Program.Name))+
+  facet_wrap(~Program.Name)+
+  scale_x_continuous(breaks=seq(from=2000,to=2009,by=2))+
+  theme(axis.text.x =element_text(angle=90,vjust=1,hjust=0))+
+  scale_y_continuous(labels=multiple_format(extra=dollar,multiple="B"))
+```
+
+### 12.3.2 dcast
+we can transform melted data (i.e., foreign country support data) into column-based data. 
+- dcast(): tricky argument
+  - first argument: data (i.e.,melt00)
+  - second argument: formula (left: columns to be kept, right: columns to be changed to rows)
+  - third argument: columnts to be changed to new column
+
+```{r}
+cast00<-dcast(melt00,Country.Name+Program.Name~Year,value.var="Dollars")
+head(cast00)
+```
+
+
+----------------------------------------
+# Chapter 13: Manipulating strings
+文字列操作
+
+
+Strings is used to pre-processing of text data, data conversion etc. 
+
+
+## 13.1 Paste
+
+Paste() function is used for combining strings. This function takes multiple strings/formula with strings as arguments, and merge them into a string. 
+```{r}
+paste("Hello","Jared","and Others")
+```
+
+Space is inserted between strings, as the paste() function has sep as its third argument.
+```{r}
+paste("Hello","Jared","and Others", sep="/")
+```
+
+The paste() function is also vectorized.
+```{r}
+paste(c("Hello","Hey","Hody"),c("Jared","Bob","Dabid"))
+```
+
+In the above cse, each vector has same number of elements, and each element is combined as pair.Otherwise, same value is iterately combined.
+```{r}
+paste("Hello",c("Jared","Bob","David"))
+paste("Hello",c("Jared","Bob","David"),c("Goodbye","Seeya"))
+```
+
+Finally, paste() function can be used collapse text vectors into one vector with collapse argument.
+```{r}
+vectorOfText<-c("Hello","Everyone","out there","-")
+paste(vectorOfText,collapse=" ")
+paste(vectorOfText,collpase="*")
+```
+
+
+## 13.2 sprintf
+sprintf() function is useful for long sentence with symbol to set where variable is inserted. 
+```{r}
+sprintf("Hello %s, your party of %s will be seated in %s minutes",c("Jared","Bob"),c("eight",16,"four",10),c(25))
+```
 
 
 
-## 12.4 summary
+
+## 13.3 Extract text
+We extract list of US president from Wikipedia. 
+- XML package
+```{r}
+install.packages("XML")
+require(XML)
+
+load("C:/Users/kojikm.mizumura/Desktop/Data Science/2. みんなのR/3. Dataset/predidents.rdata")
+theURL<-"http://www.loc.gov/rr/print/list/057_chron.html"
+presidents<-readHTMLTable(theURL, which=3, as.data.frame=TRUE,skip.rows=1,header=TRUE,stringsAsFactors=FALSE)
+
+presidents
+tail(presidents,20)
+head(presidents)
+tail(presidents$YEAR)
+presidents<-presidents[1:64,]
+```
+
+We fist generate two columns listing start and end president period. For this, we need to devide YEAR column by -. 
+
+stringr packag has str_splot() function, and this enables us to splot strings by specific value/word.
+```{r}
+require(stringr)
+
+# divide strings
+yearList<-str_split(string=presidents$YEAR,pattern="-")
+head(yearList)
+
+# combine results into a matrix
+yearMatrix<-data.frame(Reduce(rbind,yearList))
+head(yearMatrix)
+
+# names for each column
+names(yearMatrix)<-c("Start","Stop")
+
+# combine these columns to the presidents data.frame
+presidents<-cbind(presidents,yearMatrix)
+
+# change start/stop columns as numeric
+presidents$Start<-as.numeric(as.character(presidents$Start))
+presidents$stop<-as.numeric(as.character(presidents$Stop))
+
+# check the addition of columns
+head(presidents)
+tail(presidents)
+```
+
+In the above example, we needed to change class of presidents Start to numeric after changing it to character first.
+
+上記例では、presidents$Startというfactor型のデータをnumericへと変換するため、一度文字 (character)へ変換する必要があった。
+
+str_sub() function is used to select specific character from text.
+```{r}
+
+# First three letters
+str_sub(string=presidents$PRESIDENT,start=1,end=3)
+
+# fourth and eigth letters
+str_sub(string=presidents$PRESIDENT,start=4,end=8)
+
+```
+
+The str_sub() function is useful for finding president with stop period ending from 1. 
+```{r}
+presidents[str_sub(string=presidents$Start, start=4, end=4)==1,c("YEAR","PRESIDENT","Start","Stop")]
+```
+
+## 13.4 Regular expression (正規表現)
+When analyzing text data, we need to find pattern in text data. Regular expression is very useful, and the blow ilustrates example to detect president with John by str_detect()
+- str_detect
+* str_sub cannnot be used
+
+```{r}
+# TRUE/FALSE about whether President's Name includes John
+johnPos<-str_detect(string=presidents$PRESIDENT,pattern="John")
+presidents[johnPos,c("YEAR","PRESIDENT","Start","Stop")]
+```
+
+Regular expression distingushes small/large capitl, and ignore.case() needs to be set if we want to ignore capitalized letter.
+
+```{r}
+badSearch<-str_detect(presidents$PRESIDENT,"john")
+goodSearch<-str_detect(presidents$PRESIDENT,ignore.case("John"))
+sum(badSearch)
+sum(goodSearch)
+```
+
+To demonstrate the regular expression, we would us US war list. Loading rdata file from URL is not straightfoward compared with csv file.
+- url(): connect with data source
+- load(): load such connection
+- close(): close the connection again
+
+```{r}
+
+con<-url("http://www.jaredlander.com/data/warTimes.rdata")
+load(con)
+close(con)
+```
+
+The vector has begin/end date of war, and data is varied (e.g., with/without months,date). Thus, this dataset is good to check text processing function.  
+```{r}
+head(warTimes)
+```
+
+Suppose we want to make a new column regarding war begging period. For making the column, we need divide the string. The ACAETA is used in Wikipedia encoding.In addition, uncommon expression using "-" are seen as well.
+```{r}
+warTimes[str_detect(string=warTimes,pattern = "-")]
+```
+
+Thus, when we devide string, we need to find "ACAEA" or "-". str_split() function can pass regular expression to pattern argument. 
+```{r}
+# "ACAEA|-": ACAEA or -
+# (): ignored (otherwise \ needs to be inseted before ())
+# n=2: at most two values (eg, mid-July)
+
+theTimes<-str_split(string=warTimes, pattern="(ACAEA)|-",n=2)
+head(theTimes)
+```
+
+This codes functions well for the first few strings, and we would check two cases with "-".
+```{r}
+which(str_detect(string=warTimes,pattern="-"))
+theTimes[147]
+theTimes[150]
+```
+
+We are intersted in war begin period, thus we need to extract first element from each vector in the list.
+- sapply()
+```{r}
+theStart<-sapply(theTimes,FUN=function(x) x[1])
+head(theStart)
+```
+
+The original text does/does not include space, thus some data have extra space at the end. The simplest way to exclude is str_trim() function.
+- str_trim
+```{r}
+theStart<-str_trim(theStart)
+head(theStart)
+```
+
+str_extract() function is used to extract specific word from text. In this function, unmatched result is returned as NA.
+- str_extract()
+```{r}
+# extract Jaunary if its available
+str_extract(string=theStart,pattern="January")
+```
+
+str_detect() function is used to find element including "January", and retrun whole string. 
+-str_detect()
+```{r}
+theStart[str_detect(string=theStart,pattern="January")]
+```
+
+To extract year, figures with four numbers need to be identified. In the regular epxression, [0-9] refers to any number.
+```{r}
+# pick figures with four numbers
+head(str_extract(string=theStart, "[0-9][0-9][0-9][0-9]"),20)
+```
+
+The above [0-9] expression has a shortcut ("\\d"). 
+```{r}
+# "\\d"
+head(str_extract(string=theStart,"\\d{4}"),20)
+
+# numbers interated 1-3 times
+str_extract(string=theStart,"\\d{1,3}")
+```
+
+We can search "^" in the beginning or "S" in the end, by regular expression.
+```{r}
+# extract first four numbers
+head(str_extract(string = theStart,pattern="^\\d{4}"),30)
+
+# extract last four numbers
+head(str_extract(string = theStart,pattern="\\d{4}$"),30)
+
+# extract both numbers
+head(str_extract(string=theStart,pattern="^\\d{4}$"),30)
+```
+
+The powerful feature of regular expression is replace text selectively.
+- str_replace()
+- str_replace_all()
+```{r}
+# first letter replaced to x
+head(str_replace(string=theStart,pattern="\\d",replacement="x"),30)
+
+# all letters replaced to x
+head(str_replace_all(string=theStart, pattern="\\d",replacement="x"),30)
+
+# any number from 1 logit to 4 logits replaced to x
+head(str_replace_all(string=theStart, pattern="\\d{1,4}g",replacement="x"),30)
+```
+
+The regular expression can be used to replace part of search results. We extract specifc string from HTML tag.
+- "<+?>"
+- ".+?"
+- "<.+?>"
+  - ".": one letter
+  - "+": at least one match
+  - "?": least match
+```{r}
+# create HTML tagged vector
+commands<-c("<a href=indext.html>The Link is here</a>","<b>This is bold text</b>")
+
+# Extract text from HTML tag
+# (.+?) is replaced by 1
+str_replace(string=commands,pattern="<.+?>(.+?)<.+>",replacement="\\1")
+```
 
 
 
 
+-------------------------------------------
+# Chap14: Probability Distribution (確率分布)
 
+## 14.1 Normal Distribution
 
+The normail distribution is defined as below, and rnorm() function is used.
+- rnorm()
 
+$$f(x;μ, σ)=1/sqrt(2π)σ * e^{-(x-μ)^2/2σ^2}$$
 
-
-
+```{r}
+# random number generated from normal distribution
+rnorm(n=10)
+```
 
 
 
