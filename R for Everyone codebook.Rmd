@@ -200,7 +200,7 @@ apropos("mea")
 ?kmeans
 ```
 
-## 4.7 Missing Value "åáëπíl"
+## 4.7 Missing Value "?????l"
 Missing value plays an important role for statistics and calculation. There are two types of missing values; NA and NULL.
 
 ### 4.7.1 NA
@@ -219,7 +219,7 @@ zChar
 is.na(zChar)
 ```
 
-ëΩèdë„ì¸ñ@ is a popular method to deal with statistical analysis. Details is available in chapter 25 of "Data Analysis Using Regression and Multilevel/Hierachical Models".
+???d?????@ is a popular method to deal with statistical analysis. Details is available in chapter 25 of "Data Analysis Using Regression and Multilevel/Hierachical Models".
 
 ### 4.7.2 NULL
 NULL cannot be insite vector, as it disappears in the vector after its used. 
@@ -460,7 +460,7 @@ theDF<-data.frame(First=x,Second=y,Sport=q,stringAsFactors=FALSE)
 theDF$Sport
 ```
 
-In case where CSV file uses ,(ãÊêÿï∂éö) in each data.
+In case where CSV file uses ,(???ÿï???) in each data.
 - read.csv2(or read.delim2)
 
 ## 6.2. Loading Excel data
@@ -503,17 +503,17 @@ RData file is useful to transfer data to another R programmer. RData file is a b
 
 ```{r}
 # save tomato data.frame
-save(tomato,file="C:/Users/kojikm.mizumura/Desktop/Data Science/Ç›ÇÒÇ»ÇÃR/tomato.rdata")
+save(tomato,file="C:/Users/kojikm.mizumura/Desktop/Data Science/?›Ç??»Ç?R/tomato.rdata")
 rm(tomato)
 head(tomato)
-load("C:/Users/kojikm.mizumura/Desktop/Data Science/Ç›ÇÒÇ»ÇÃR/tomato.rdata")
+load("C:/Users/kojikm.mizumura/Desktop/Data Science/?›Ç??»Ç?R/tomato.rdata")
 head(tomato)
 
 n<-20
 r<-1:10
-save(n,r,w,file="C:/Users/kojikm.mizumura/Desktop/Data Science/Ç›ÇÒÇ»ÇÃR/3. Dataset/multiple.rdata")
+save(n,r,w,file="C:/Users/kojikm.mizumura/Desktop/Data Science/?›Ç??»Ç?R/3. Dataset/multiple.rdata")
 rm(n,r,w)
-load("C:/Users/kojikm.mizumura/Desktop/Data Science/Ç›ÇÒÇ»ÇÃR/3. Dataset/multiple.rdata")
+load("C:/Users/kojikm.mizumura/Desktop/Data Science/?›Ç??»Ç?R/3. Dataset/multiple.rdata")
 ```
 
 ## 6.6 Default Packages
@@ -679,7 +679,7 @@ hello.person("Jared","Lander") #set different last name
 
 
 ### 8.2.2 Additional argument 
-R has a special operator ("ââéZéq", "..."") allow function to take arguments not needed for defining function.
+R has a special operator ("???Z?q", "..."") allow function to take arguments not needed for defining function.
 ```{r}
 # Additional argument
 hello.person("Jared",extra="Goodbye") #error
@@ -976,7 +976,7 @@ rowSums(theMatrix)
 colSums(theMatrix)
 ```
 
-We check NA values (#åáëπíl) in apply function.
+We check NA values (#?????l) in apply function.
 
 ```{r}
 theMatrix[2,1]<-NA
@@ -1309,8 +1309,8 @@ The most common data comine functions are
 The exampke: csv files from USAID Open Government Initiative
 
 ```{r}
-download.file(url="http://jaredlander.com/data/US_Foreign_Aid.zip",destfile="C:/Users/kojikm.mizumura/Desktop/Data Science/2. Ç›ÇÒÇ»ÇÃR/ForeignAid.zip")
-unzip("C:/Users/kojikm.mizumura/Desktop/Data Science/2. Ç›ÇÒÇ»ÇÃR/ForeignAid.zip", exdir="data")
+download.file(url="http://jaredlander.com/data/US_Foreign_Aid.zip",destfile="C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?›Ç??»Ç?R/ForeignAid.zip")
+unzip("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?›Ç??»Ç?R/ForeignAid.zip", exdir="data")
 ```
 
 To load all csv files, we use for loop() function. We obtain list of files by dir function. We assign name to each data by assign() function.
@@ -1320,7 +1320,7 @@ To load all csv files, we use for loop() function. We obtain list of files by di
 ```{r}
 library(stringr)
 # obtain list of files
-theFiles<-dir("C:/Users/kojikm.mizumura/Desktop/Data Science/2. Ç›ÇÒÇ»ÇÃR/data", pattern="\\.csv")
+theFiles<-dir("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?›Ç??»Ç?R/data", pattern="\\.csv")
 # apply loop processing for these files
 for (a in theFiles)
 {
@@ -1328,8 +1328,8 @@ for (a in theFiles)
   nameToUse<-str_sub(string=a,start=12,end=18)
   # read.table() to load csv file
   # file.path() is for generating file path setting file and folder name
-  temp<-read.table(file=file.path("C:/Users/kojikm.mizumura/Desktop/Data Science/2. Ç›ÇÒÇ»ÇÃR/data",a),header=TRUE,sep=",",stringsAsFactors = FALSE)
-  #R workspace gets variables (RÇÃworkspaceÇ…ïœêîÇäÑÇËìñÇƒÇÈ)
+  temp<-read.table(file=file.path("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?›Ç??»Ç?R/data",a),header=TRUE,sep=",",stringsAsFactors = FALSE)
+  #R workspace gets variables (R??workspace?…ïœê??ÔøΩÔøΩÔøΩÔøΩËìñ?ƒÇ?)
   assign(x=nameToUse,value=temp)  }
 ```
 
@@ -1470,7 +1470,7 @@ head(cast00)
 
 ----------------------------------------
 # Chapter 13: Manipulating strings
-ï∂éöóÒëÄçÏ
+?????ÒëÄç?
 
 
 Strings is used to pre-processing of text data, data conversion etc. 
@@ -1523,7 +1523,7 @@ We extract list of US president from Wikipedia.
 install.packages("XML")
 require(XML)
 
-load("C:/Users/kojikm.mizumura/Desktop/Data Science/2. Ç›ÇÒÇ»ÇÃR/3. Dataset/predidents.rdata")
+load("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?›Ç??»Ç?R/3. Dataset/predidents.rdata")
 theURL<-"http://www.loc.gov/rr/print/list/057_chron.html"
 presidents<-readHTMLTable(theURL, which=3, as.data.frame=TRUE,skip.rows=1,header=TRUE,stringsAsFactors=FALSE)
 
@@ -1565,8 +1565,6 @@ tail(presidents)
 
 In the above example, we needed to change class of presidents Start to numeric after changing it to character first.
 
-è„ãLó·Ç≈ÇÕÅApresidents$StartÇ∆Ç¢Ç§factorå^ÇÃÉfÅ[É^ÇnumericÇ÷Ç∆ïœä∑Ç∑ÇÈÇΩÇﬂÅAàÍìxï∂éö (character)Ç÷ïœä∑Ç∑ÇÈïKóvÇ™Ç†Ç¡ÇΩÅB
-
 str_sub() function is used to select specific character from text.
 ```{r}
 
@@ -1583,7 +1581,7 @@ The str_sub() function is useful for finding president with stop period ending f
 presidents[str_sub(string=presidents$Start, start=4, end=4)==1,c("YEAR","PRESIDENT","Start","Stop")]
 ```
 
-## 13.4 Regular expression (ê≥ãKï\åª)
+## 13.4 Regular expression (???K?\??)
 When analyzing text data, we need to find pattern in text data. Regular expression is very useful, and the blow ilustrates example to detect president with John by str_detect()
 - str_detect
 * str_sub cannnot be used
@@ -1730,14 +1728,14 @@ str_replace(string=commands,pattern="<.+?>(.+?)<.+>",replacement="\\1")
 
 
 -------------------------------------------
-# Chap14: Probability Distribution (ämó¶ï™ïz)
+# Chap14: Probability Distribution (?m?????z)
 
 ## 14.1 Normal Distribution
 
 The normail distribution is defined as below, and rnorm() function is used with inital setting of mean/variance.
 - rnorm()
 
-$$f(x;É , É–)=1/sqrt(2ÉŒ)É– * e^{-(x-É )^2/2É–^2}$$
+$$f(x;\mu, \sigma)=\frac{1}{\sqrt{(2\pi)}\sigma} * e^{-(x-\mu)^2/2\sigma^2}$$
 
 ```{r}
 # random number generation from normal distribution
@@ -1767,9 +1765,11 @@ ggplot(data.frame(x=randNorm,y=randDensity))+aes(x=x,y=y)+
 
 The similar function is pnorm(), which returns accumulated probability
 $$
-\Phi(a)= P(X<=a)=\Sigma
-\int_Åá^a \frac{1}{\sqrt{(2ÉŒ)}É–} e^{\frac{-(x-É )^2}{2É–^2} dx
+\Phi(a)= P(X<=a)=\int_b^a\frac{1}{\sqrt{2\pi}\sigma}e^{\frac{-(x-\mu)^2}{2\sigma^2}}
+
+
 $$
+
 ```{r}
 pnorm(randNorm10)
 pnorm(c(-3,0,3))
@@ -1803,14 +1803,142 @@ p+geom_polygon(data=lessThanNeg1,aes(x=x,y=y))
 neg1Post1Seq<-seq(from=-1,to=1,by=.1)
 
 # create sequential x by data.frame
+neg1To1<-data.frame(x=neg1Post1Seq,y=dnorm(neg1Post1Seq))
 
+head(neg1To1)
+
+# connect endpoint
+neg1To1<-rbind(c(min(neg1To1$x),0),
+               neg1To1,
+               c(max(neg1To1$y),0))
+
+p+geom_polygon(data=neg1To1,aes(x=x,y=y))
+
+randProb<-pnorm(randNorm)
+ggplot(data.frame(x=randNorm,y=randProb))+aes(x=x,y=y)+
+  geom_point()+labs(x="Random Normal Viariables",y="Probability")
+```
+
+inverse function of pnorm is qnorm, and returns accumulated probability distribution transofation points.
+```{r}
+randNorm10
+
+q<-qnorm(pnorm(randNorm10))
+all.equal(randNorm10,q)
 ```
 
 ## 14.2 Binomial Distribution
 
+Ninominal distribution is defined as:
+$$
+p(x;n,p)=\left(
+  \begin{array}{cc}
+n\\
+x
+\end{array}
+\right)
+p^x(1-p)^{n-x}, where 
+
+\left(
+  \begin{array}{cc}
+n\\
+x
+\end{array}
+\right)=\frac{n!}{x!(n-x)!}
+
+$$
+
 ```{r}
+
 rbinom(n=1,size=10,prob=0.4)
 
+# success rate 0.4, action 10 
+rbinom(n=1, size=10,prob=0.4)
+rbinom(n=5,size=10,prob=0.4)
+rbinom(n=10,size=10,prob=0.4)
+
+# when we set size=1, it becomes bernoulli trial
+rbinom(n=1, size=1, prob=0.4)
+rbinom(n=5, size=1, prob=0.4)
+rbinom(n=10, size=1, prob=0.4)
+```
+
+We visualize binomial ditribution (success rate:0.3, trial 10, 10,000 iteration)
+```{r}
+binomData<-data.frame(Success=rbinom(n=10000,size=10,prob=0.3))
+binomData
+ggplot(binomData, aes(x=Success))+geom_histogram(binwidth = 1)
+```
+
+By increasing trial times makes the binomial distribution to normal distribution.
+```{r}
+binom5<-data.frame(Successes=rbinom(n=10000,size=5, prob=.3),Size=5)
+View(binom5)
+dim(binom5)
+
+head(binom5)
+
+# genberate data with same 10000 rows
+binom10<-data.frame(Successes=rbinom(n=10000,size=10,prob=.3),Size=10)
+dim(binom10)
+head(binom10)
+
+binom100<-data.frame(Successes=rbinom(n=10000,size=100,prob=.3),
+                     Size=100)
+binom1000<-data.frame(Successes=rbinom(n=10000,size=1000,prob=.3),
+                      Size=1000)
+
+# combine all data as a data.frame
+binomAll <- rbind(binom5, binom10, binom100, binom1000)
+dim(binomAll)
+
+tail(binomAll,10)
+
+# make a histogram plot
+ggplot(binomAll, aes(x=Successes))+geom_histogram()
+
+ggplot(binomAll, aes(x=Successes))+geom_histogram()+
+  facet_wrap(~Size)
+
+ggplot(binomAll, aes(x=Successes))+geom_histogram()+
+  facet_wrap(~Size,scales="free")
+```
+
+The accumumulated probability function is:
+$$
+F(a;n,p)=P{X<=a}=\Sigma_{i=0}^a 
+
+\left(
+  \begin{array}{cc}
+n\\
+i
+\end{array}
+\right)
+
+p^i
+(1-p)^{n-i}
+$$
+n: trial times, p=success probability.
+Similar as normal distribution, dbinom(), and pbinom() functions return accumulated probability, distribution respectively.
+- dbinom()
+- rbinom()
+```{r}
+# proobability of x=3 with 10 trials, 0.3 success rate
+dbinom(x=3, size=10, prob=0.3)
+
+# proobability of x<3 with 10 trials, 0.3 success rate
+pbinom(q=3, size=10, prob=0.3)
+
+# The probability can be vectorized
+dbinom(x=1:10, size=10,prob=0.3)
+
+pbinom(q=1:10,size=10,prob=0.3)
+```
+
+When a probability is given, the qbinom() returns quantile point
+```{r}
+qbinom(p=0.3, size=10, prob=0.3)
+qbinom(p=c(0.3,0.35,0.4,0.5,0.6),size=10,prob=.3)
 ```
 
 ## 14.3 Poisson Distribution
