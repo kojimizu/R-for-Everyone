@@ -1942,9 +1942,323 @@ qbinom(p=c(0.3,0.35,0.4,0.5,0.6),size=10,prob=.3)
 ```
 
 ## 14.3 Poisson Distribution
+Poission ditribution is used for count data. 
+$$ 
+P(x;\lambda)=\frac{{\lambda^x e^{-\lambda}}}{x!}
+$$
+The accumulated distribution is 
+$$
+F(a;\lambda)=P{X<=a}=\Sigma_{i=0}^a \frac{\lambda^i e^{-\lambda}}{i!}
+$$
 
+- rpois(): random count
+- dpois(): density
+- ppois(): distribution
+- qpois(): quantile
+```{r}
+
+pois1<-rpois(n=10000,lambda=1)
+pois2<-rpois(n=10000,lambda=2)
+pois5<-rpois(n=10000,lambda=5)
+pois10<-rpois(n=10000,lambda=10)
+pois20<-rpois(n=10000,lambda=20)
+
+pois<-data.frame(Lambda.1=pois1, Lambda.2=pois2, Lambda.5=pois5,Lambda.10=pois10, Lambda.20=pois20)
+
+# reshape2 package for chart
+require(reshape2)
+
+# change data format into long
+pois<- melt(data=pois, variable.name="Lambda",value.name="x")
+
+# stringr for cleaning column
+require(stringr)
+
+pois$Lambda<-as.factor(as.numeric(str_extract(string=pois$Lambda, pattern="\\d+")))
+
+head(pois)
+tail(pois)
+
+summary(pois)
+```
+
+We can check how the poisson distribution is changed to normal distribution as we increase lambda value.
+
+```{r}
+require(ggplot2)
+ggplot(pois,aes(x=x))+geom_histogram(binwidth=1)+facet_wrap(~Lambda)+ggtitle("Probability Mass Function")
+```
+
+Another approach is to draw the multiple distribution on the same chart. 
+```{r}
+ggplot(pois, aes(x=x))+
+  geom_density(aes(group=Lambda, color=Lambda,fill=Lambda),
+               adjust=4, alpha=1/2)+
+  scale_color_discrete()+scale_fill_discrete()+ggtitle("Probability Mass Function")
+
+```
 
 ## 14.4 Other Distribution
+
+Table needs to be inserted here.
+
+------------------------------------------
+# Chapter 15: Basic Statistics
+
+## 15.1 Summary statistics
+
+Sample function is used to extract specific numbers with selected size.
+- replace=TRUE:allows duplicate
+
+```{r}
+x<-sample(x=1:100, size=100, replace=TRUE)
+mean(x)
+
+y<-x
+
+# randomly select 20 elements and replace with NA
+y[sample(x=1:100, size=20, replace=FALSE)]<-NA
+y
+```
+
+When we use mean() function to y, NA is returned, as it is the default setting for the mean() function.
+- na.rm: TRUE to exclude NA values
+```{r}
+mean(y)
+mean(y, na.rm=TRUE)
+```
+
+To calculate weighted average, we use weighted.mean() function. 
+- na.rm: exclude NA values
+```{r}
+grades<-c(95,72,87,66)
+weights<-c(1/2,1/4,1/8,1/8)
+mean(grades)
+
+weighted.mean(x=grades,w=weights)
+
+var(x)
+sum((x-mean(x))^2)/(length(x)-1)
+```
+
+The standard error is squared root of variance, and calculated with sd() function. 
+- sd()
+
+```{r}
+sqrt(var(x))
+sd(x)
+
+sd(y)
+sd(y,na.rm=TRUE)
+```
+
+Other functions are min, max, median, auantile.
+```{r}
+quantile(x,probs=c(0.25,0.75))
+```
+
+## 15.2 Correlation and Covariance
+correlation is defined as follows:
+- dataset: economics(ggplot2 library)
+
+$$
+r_{xy}=frac{\Sigma_{i=1}^n (x_i-\hat{x})}{(y_i-\hat{y})}{(n-1)s_xs_y}
+$$
+
+```{r}
+require(ggplot2)
+head(economics)
+```
+
+Economics dataset
+- pce: personal consumption expenditure
+- psavert: personal saving rate
+```{r}
+cor(economics$pce,economics$psavert)
+plot(economics$pce,economics$psavert)
+
+# manually calculate
+xPart<-economics$pce-mean(economics$pce)
+yPart<-economics$psavert-mean(economics$psavert)
+nMinusOne<-(nrow(economics)-1)
+xSD<-sd(economics$pce)
+ySD<-sd(economics$psavert)
+
+sum(xPart*yPart)/(nMinusOne*xSD*ySD)
+```
+
+When we compare multiple columns, cor() function is used as matrix.
+```{r}
+cor(economics[,c(2,4:6)])
+```
+
+These values are easier to understand when plotted. 
+- GGally package (useful pair of charts based on ggplot2)
+ - GGally load reshape package, and contradict with reshap2 package, thus "::" operator shou;ld be used not to download reshape package. 
+```{r}
+GGally::ggpairs(economics,economics[,c(2,4:6)],parm=list(labelSize=8))
+```
+ 
+Heatmap for correlation. High correlation is positive relationship between variables.
+
+```{r}
+# data process
+require(reshape2)
+# chart description
+require(scales)
+
+# load economics data rom ggplot package
+require(ggplot2)
+econCor<-cor(economics[,c(2,4:6)])
+
+# Conversion to Long format
+econMelt<-melt(econCor,varnames = c("x","y"),value.name = "Correlation")
+
+# sort by correlation
+econMelt<-econMelt[order(econMelt$Correlation),]
+
+edit(econMelt)
+
+# ggplot chart
+
+# x, y as axis
+ggplot(econMelt,aes(x=x,y=y))+
+  geom_tile(aes(fill=Correlation))+
+  
+  scale_fill_gradient2(low=muted("red"),mid="white",high="steelblue",
+                      guide=guide_colorbar(ticks=FALSE,barheight = 10),
+                      limits=c(-1,1))+
+                        theme_minimal()+
+                        labs(x=NULL,y=NULL)
+
+# theme_minimal: minimal theme is inserted into chart
+# x-axis, y-axis label is empty
+
+```
+ 
+Missing values are problematic for correplation. Instead of na.rm=TRUE, "all.obs","complete.obs","parwise.complete.obs","everything" or "na.or.complete" are used.
+```{r}
+m<-c(9,9,NA,3,NA,5,8,1,10,4)
+n<-c(2,NA,1,6,6,4,1,1,6,7)
+p<-c(8,4,3,9,10,NA,3,NA,9,9)
+q<-c(10,10,7,8,4,2,8,5,5,2)
+r<-c(1,9,7,6,5,6,2,7,9,10)
+
+# combine
+theMat<-cbind(m,n,p,q,r)
+```
+
+(1) everything 
+There should not be any NA in all columns, otherwise return NA. 
+(2) all.obs
+If there ia at least one NA in any column, error message is returned.
+```{r}
+cor(theMat,use="everything")
+cor(theMat,use="all.obs")
+```
+
+(3) complete.obs
+(4) na.or.complete
+```{r}
+cor(theMat,use="complete.obs")
+cor(theMat,use="na.or.complete")
+cor(theMat[c(1,4,7,9,10),])
+
+identical(cor(theMat,use="na.or.complete"),
+          cor(theMat[c(1,4,7,9,10),]))
+```
+
+Last option is "pairwise.complete", and further comprehensive. Compare two columns and keep row in cases each entry is not NA.
+```{r}
+# the entire correlation matrix
+cor(theMat,use="pairwise.complete.obs")
+
+# compare m-column and n-column 
+cor(theMat[,c("m","p")],use="complete.obs")
+```
+
+ggpair
+```{r}
+data(tips,package="reshape2")
+head(tips)
+
+GGally::ggpairs(tips)
+```
+
+## 15.3 T Statistics
+T statistics is used for data average or two group average.
+
+```{r}
+tips
+
+# observer's sex
+unique(tips$sex)
+unique(tips$day)
+```
+
+### 15.3.1 t-statistics for single observation
+We test whether the average value is 2.5. 
+```{r}
+t.test(tips$tip,alternative="two.sided",mu=2.5)
+```
+
+The result provides 95% confidence interval, p-value etc. From this result, the average is not equal to 2.5.T-value is a difference between observation average and null-hypothesis avarage, divided by standard diviation. 
+$$
+t-statistics=\frac{\hat{x}-\mu_0}{s_x/\sqrt{n}}
+$$
+
+We visualize the results by drawing t-distribution.
+```{r}
+# distribution
+require(ggplot2)
+randT<-rt(3000,df=NROW(tips)-1)
+
+# t-value and other information
+tipTTest<-t.test(tips$tip,alternative="two.sided",mu=2.50)
+
+ggplot(data.frame(x=randT))+
+  geom_density(aes(x=x),fill="grey",color="grey")+
+  geom_vline(xintercept=tipTTest$statistic)+
+  geom_vline(xintercept=mean(randT)+c(-2,2)*sd(randT),linetype=2)
+
+```
+
+Next, we test whether the average exceeds 2.5 by single t-test.
+- tips data: reshape2
+```{r}
+require(reshape2)
+t.test(tips$tip,alternative="greater",mu=2.5)
+
+```
+
+The results shows that p-value, and the average iw more than 2.5, corrsponding to confidence interval.
+
+### 15.3.2 t-test by two observations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
