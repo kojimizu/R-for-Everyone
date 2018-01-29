@@ -2185,7 +2185,7 @@ head(tips)
 GGally::ggpairs(tips)
 ```
 
-## 15.3 T Statistics
+## 15.3 t-statistics
 T statistics is used for data average or two group average.
 
 ```{r}
@@ -2196,7 +2196,7 @@ unique(tips$sex)
 unique(tips$day)
 ```
 
-### 15.3.1 t-statistics for single observation
+### 15.3.1 t-test for single observation
 We test whether the average value is 2.5. 
 ```{r}
 t.test(tips$tip,alternative="two.sided",mu=2.5)
@@ -2233,20 +2233,92 @@ t.test(tips$tip,alternative="greater",mu=2.5)
 
 The results shows that p-value, and the average iw more than 2.5, corrsponding to confidence interval.
 
-### 15.3.2 t-test by two observations
+### 15.3.2 t-test for two observations
+When we compare two samples, we use t-test.Using tips dataset, we are going to compare tips amount by male/female waiter. We first check variance of two samples.
+```{r}
+# First compare variance of two samples
+aggregate(tip~sex, data=tips,var)
+
+# test of nomality of tips distribution
+shapiro.test(tips$tip)
+shapiro.test(tips$tip[tips$sex=="Female"])
+shapiro.test(tips$tip[tips$sex=="Male"])
+
+
+# We didn't pass any test, so visualize the results
+ggplot(tips, aes(x=tip,fill=sex))+
+  geom_histogram(binwidth=.5, alpha=1/2)
+
+```
+
+As We cannot observe normality, we check whether the variance of two samples is identical by nonparametric ansari.bradley test. 
+```{r}
+ansari.test(tip~sex, tips)
+```
+
+Thsi results show that variance is identical, and we can use t-test for two samples. 
+```{r}
+t.test(tip~sex, data=tips,var.equal=TRUE)
+```
+
+The result is not statistically significant,and we conclude that tip was given, irrespective of male/female. We could also check that average of both samples are within two standard deviation.
+```{r}
+require(plyr)
+tipsummary<-ddply(tips,"sex",summarize,
+                  tip.mean=mean(tip),tip.sd=sd(tip),
+                  Lower=tip.mean-2*tip.sd/sqrt(NROW(tip)),
+                  Upper=tip.mean+2*tip.sd/sqrt(NROW(tip)))
+tipsummary
+```
+
+dply() package dvides the sample by sex, and summarize respectively. This function generates new data.frame.
+
+```{r}
+ggplot(tipsummary,aes(x=tip.mean,y=sex))+geom_point()+
+  geom_errorbarh(aes(xmin=Lower,xmax=Upper),height=.2)
+```
+
+### 15.3.3 t-test of two corresponding observations
+t-test of two corresponding variables is used for twin baby  identification, comparison of pre/post medical operation, comparison of father/son. 
+- t.test(): paired=TRUE
+- usingR package
+```{r}
+install.packages("UsingR")
+require(UsingR)
+summary(father.son)
+
+t.test(father.son$fheight,father.son$sheight,paired=TRUE)
+```
+
+We can conclude that we reject null hypothesis, and father's height is different from son's height. When we visualize probability density of height difference. 
+- average of the distribution is not 0
+- confidence interval is not 0
+
+```{r}
+heightDiff<-father.son$fheight-father.son$sheight
+ggplot(father.son,aes(x=fheight-sheight))+
+  geom_density()+
+  geom_vline(xintercept=mean(heightDiff))+
+  geom_vline(xintercept=mean(heightDiff)+
+               2*c(-1,1)*sd(heightDiff)/sqrt(nrow(father.son))
+             ,linetype=2)
+```
+
+## 15.4 Variance Analysis
+A
+For applying ANOVA,
+$$
+F=\frac{\Sigma_i {n_i(\hat{Y_i}-\hat{Y})^2/(K-1)}}{\Sigma_i {(\hat{Y_{ij}}-\hat{Y})^2/(N-K)}}
+$$
+```{r}
+topAnova<-aov(tip~day-1, tips)
+```
 
 
 
 
 
-
-
-
-
-
-
-
-
+# 16 Linear Model 
 
 
 
