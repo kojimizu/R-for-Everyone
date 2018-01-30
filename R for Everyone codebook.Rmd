@@ -2305,28 +2305,137 @@ ggplot(father.son,aes(x=fheight-sheight))+
 ```
 
 ## 15.4 Variance Analysis
-A
-For applying ANOVA,
+
+For applying ANOVA,the following formula needs to be rememberd. 
+However, in the R function, aov() is useful for conducing ANOVA. 
+- Left: Variable of interest (i.e., tip)
+- Right: control value (i.e.,day)
+
 $$
 F=\frac{\Sigma_i {n_i(\hat{Y_i}-\hat{Y})^2/(K-1)}}{\Sigma_i {(\hat{Y_{ij}}-\hat{Y})^2/(N-K)}}
 $$
 ```{r}
-topAnova<-aov(tip~day-1, tips)
+tipAnova<-aov(tip~day-1, tips)
+tipAnova$coefficients
+tipintercept<-aov(tip~day, tips)
+tipintercept$coefficients
+```
+
+In the variance analysis, we can 
+```{r}
+summary(tipAnova)
+```
+
+By the above test, p-value is significant, we would like to see which group has difference. The simplest way is plot/confirm group average and confidence interval. 
+- nrow: data.frame, matrix
+NROW: first dimensional object
+- 
+```{r}
+require(plyr)
+tipsByDay<-ddply(tips,"day",summarize,
+                tip.mean=mean(tip),tip.sd=sd(tip),
+                Length=NROW(tip),
+                tfrac=qt(p=.90,df=Length-1),
+                Lower=tip.mean-tfrac*tip.sd/sqrt(Length),
+                Upper=tip.mean+tfrac*tip.sd/sqrt(Length))
+              
+
+edit(tipsByDay)
+ggplot(tipsByDay,aes(x=tip.mean,y=day))+geom_point()+
+  geom_errorbarh(aes(xmin=Lower,xmax=Upper),height=.3)
+
+nrow(tips)
+NROW(tips)
+nrow(tips$tip)
+NROW(tips$tip)
 ```
 
 
 
-
-
 # 16 Linear Model 
+## 16.1 Single linear regression 
 
+Single linear regression
+$$
+y=a+bx+\epsilon \\
+b=\frac{\Sigma_{i=1}^n(x_i-\overline{x})(y_i-\overline{y})}{\Sigma_{i=1}^n (xi-\overline{x})^2} \\
+a=\overline{y}-b \\
+\epsilon ~ N(0,1)
+$$
+We are going to conduct a linear regression.
+- father.son (UsingR package)
 
+```{r}
+require(UsingR)
+require(ggplot2)
+head(father.son)
 
+ggplot(father.son,aes(x=fheight,y=sheight))+geom_point()+
+  geom_smooth(method="lm")+labs(x="Fathers",y="sons")
+```
 
+The above code generates single linear regression, but we cannnot trust it. We will use lm() function.
+```{r}
+heightsLM<-lm(sheight~fheight,data=father.son)
+heightsLM
+```
 
+standard devision can be obtained by summary() function.
+```{r}
+summary(heightsLM)
+```
 
+### 16.1.1 Alternative to variance analysis
+An alternative methos is to regress a category variable without intercept.
+- tips: reshape2
+```{r}
+data(tips,package="reshape2")
+edit(tips)
 
+tipsAnova<-aov(tip~day-1,data=tips)
+summary(tipsAnova)
+# -1 is used to exclude intercept
+# day is category variable
 
+tipsLM<-lm(tip~day-1,data=tips)
+summary(tipsLM)
+```
+
+both in ANOVA and regression analysis, F-statistics and degree of freedom are identical. When we visualize coefficient and standard devision, we can get same results. 
+
+```{r}
+# we manually calculate average and confidence interval
+require(plyr)
+
+tipsByDay<-ddply(tips,"day",summarize,
+                 tip.mean=mean(tip),tip.sd=sd(tip),
+                 Length=NROW(tip),
+                 tfrac=qt(p=.90,df=Length-1),
+                 Lower=tip.mean-tfrac*tip.sd/sqrt(Length),
+                 Upper=tip.mean+tfrac*tip.sd/sqrt(Length))
+
+# Extract data from tipsLM
+tipsInfo<-summary(tipsLM)
+tipsCoef<-as.data.frame(tipsInfo$coefficients[,1:2])
+tipsCoef<-within(tipsCoef,{
+  Lower<-Estimate-qt(p=0.90, df=tipsInfo$df[2])*'`Std.Error`
+  Upper<-Estimate+qt(p=0.90, df=tipsInfo$df[2])*`Std.Error`  day<-rownames(tipsCoef)
+  })
+
+# Plot both anova and regression results
+
+ggplot(tipsByDay,aes(x=tip.mean,y=day))+geom_point()+
+  geom_errorbarh(aes(xmin=Lower,xmax=Upper),height=.3)+
+  ggtitle("Tips by day calculated manually")
+
+ggplot(tipsByDay,aes(x=Estimate,y=day))+geom_point()+
+  geom_errorbarh(aes(xmin=Lower,xmax=Upper),height=.3)+
+  ggtitle("Tips by day calculated from regression model")
+```
+
+#- within(): we can create a new column in data.frame.When we refer blank column (i.e., Std.Error), we need to use back quote (`).
+
+# 16.2 Multiple regression
 
 
 
