@@ -2389,6 +2389,8 @@ summary(heightsLM)
 An alternative methos is to regress a category variable without intercept.
 - tips: reshape2
 ```{r}
+install.packages("reshape2")
+require(reshape2)
 data(tips,package="reshape2")
 edit(tips)
 
@@ -2433,13 +2435,192 @@ ggplot(tipsByDay,aes(x=Estimate,y=day))+geom_point()+
   ggtitle("Tips by day calculated from regression model")
 ```
 
-#- within(): we can create a new column in data.frame.When we refer blank column (i.e., Std.Error), we need to use back quote (`).
+- within(): we can create a new column in data.frame.When we refer blank column (i.e., Std.Error), we need to use back quote (`).
 
 # 16.2 Multiple regression
 
+Original data - http://jaredlander.com/data/housing.csv
+- read.table() function 
+- argument: sep, header,stringsAsFactors
 
+```{r}
+housing <- read.table("http://jaredlander.com/data/housing.csv
+", sep = ",", header = TRUE, stringsAsFactors = FALSE) 
+```
 
+We change variable name 
+```{r}
+# variable name change
+names(housing)
+names(housing) <- c("Neighborhood", "Class", "Units", "YearBuilt", 
+                    "SqFt", "Income", "IncomePerSqFt", "Expense",
+                    "ExpensePerSqFt","NetIncome", "Value", "ValuePerSqFt",
+                    "Boro")
+head(housing)
+```
 
+WE visualize data, treating ValuePerSqFt as object function.
+```{r}
+#data visualization
+install.packages("ggplot2")
+require(ggplot2)
+ggplot(housing, aes(x=ValuePerSqFt)) +
+  geom_histogram(binwidth = 10) + labs(x = "Value per Squire Foot")
+
+```
+
+When we can see binary tend, we mapp it by Boro.
+```{r}
+# ggplot by boro
+ggplot(housing, aes(x=ValuePerSqFt, fill = Boro)) +
+  geom_histogram(binwidth = 10)+ xlab("Value per Square Foot")
+ggplot(housing, aes(x=ValuePerSqFt, fill = Boro)) +
+  geom_histogram(binwidth = 10)+ labs(x="Value per Square Foot")+
+  facet_wrap(~Boro)
+```
+
+Next, we check SqFt and housing units. 
+```{r}
+# ggplot - histogram by SqFt/Units
+ggplot(housing, aes(x=SqFt)) + geom_histogram()
+ggplot(housing, aes(x=Units)) + geom_histogram()
+
+ggplot(housing[housing$Units<1000,], aes(x=SqFt))+geom_histogram()
+ggplot(housing[housing$Units<1000,],aes(x=Units)) + geom_histogram()
+```
+
+```{r}
+##ggplot - point by SqFt/Units
+ggplot(housing, aes(x =SqFt, y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =Units, y = ValuePerSqFt)) + geom_point()
+ggplot(housing[housing$Units<1000,], aes(x =SqFt, y = ValuePerSqFt)) + geom_point()
+ggplot(housing[housing$Units<1000,], aes(x =Units, y = ValuePerSqFt)) + geom_point()
+```
+
+Outliers are excluded as follows.
+```{r}
+#Exclude outlier
+sum(housing$Units>=1000)
+housing1 <- housing[housing$Units < 1000, ]
+```
+
+Log-conversion
+```{r}
+#log-conversion
+require(ggplot2)
+
+#by SqFt
+ggplot(housing, aes(x =SqFt, y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =log(SqFt), y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =SqFt, y = log(ValuePerSqFt))) + geom_point()
+ggplot(housing, aes(x =log(SqFt), y = log(ValuePerSqFt))) + geom_point()
+
+ggplot(housing, aes(x =Units, y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =log(Units), y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =Units, y = log(ValuePerSqFt))) + geom_point()
+ggplot(housing, aes(x =log(Units), y = log(ValuePerSqFt))) + geom_point()
+
+```
+
+After converting some variables into log-based variable, we fit a linear model into the dataset.
+- coefplot() function
+```{r}
+#regression analysis
+house2 <- lm(ValuePerSqFt ~ Units + SqFt + Boro, data=housing1)
+summary(house2)
+house2$coefficients
+
+require(ggplot2)
+
+install.packages("coefplot")
+require(coefplot)
+
+coefplot(house2)
+```
+
+Next, we try other models (i.e., house3 and house4). 
+```{r}
+#Inclusing of interaction term
+house3 <- lm(ValuePerSqFt ~ Units*SqFt + Boro, data=housing1)
+house4 <- lm(ValuePerSqFt ~ Units:SqFt + Boro, data=housing1)
+house3$coefficients
+house4$coefficients
+coefplot(house3)
+coefplot(house4)
+```
+
+Case where the interaction terms for more than two variables.  
+```{r}
+house5 <- lm(ValuePerSqFt ~ Units*SqFt*Boro, data=housing1)
+house5$coefficients
+```
+
+```{r}
+house6<- lm(ValuePerSqFt ~ Class*Boro, data=housing1)
+house6$coefficients
+
+house7 <- lm(ValuePerSqFt ~ I(SqFt/Units)+Boro, data=housing1)
+house7$coefficients
+
+house8 <- lm(ValuePerSqFt ~ (Units + SqFt)^2, data = housing1)
+house8$coefficients
+house9 <- lm(ValuePerSqFt ~ Units*SqFt, data = housing1)
+identical(house8$coefficients, house9$coefficients)
+
+house10 <- lm(ValuePerSqFt ~ I(Units + SqFt)^2, data=housing1)
+house10$coefficients
+```
+
+```{r}
+#model coefficient comparison
+multiplot(house2, house3, house4)
+
+housingNew <- read.table("http://www.jaredlander.com/data/housingNew.csv", sep=",",header=TRUE,stringsAsFactors=FALSE)
+housePredict <- predict(house2, newdata = housingNew, se.fit = TRUE, interval ="prediction", level=.95)
+head(housePredict$fit)
+head(housePredict$se.fit)
+house2$coefficients
+```
+
+# Chapter 17: Generalized Linear Model (GLM)
+## 17.1 Logistic regression
+We use data of the 2010 American Community Survey (ACS) for logistic regression.
+
+data loading
+- original dataset: http://jaredlander.com/data/acs_ny.csv
+
+Logistic regression
+$$
+p(y_i=1)=logit^{-1}(X_i\beta)
+
+\\logit^{-1}(x)=\frac{e^x}{1+e^x}
+$$
+
+```{r}
+acs <- read.table("http://jaredlander.com/data/acs_ny.csv", sep=",", header=TRUE, stringsAsFactors = FALSE)
+
+acs$income <- with (acs, FamilyIncome >= 150000)
+
+require(ggplot2)
+require(useful)
+
+ggplot(acs, aes(x=FamilyIncome)) + 
+  geom_density(fill = "grey", color = "grey") +
+  geom_vline(xintercept = 150000)
+  scale_x_continuous(label = multiple.dollar, limits = c(0,1000000))
+  
+head(acs)
+```
+
+Logistic regression is very similar to linear regression.
+```{r}
+# logistic analysis
+income1 <- glm(income ~ HouseCosts + NumWorkers +OwnRent + NumBedrooms +
+                 FamilyType, family = binomial(link = "logit"), data=acs)
+summary(income1)
+require(coefplot)
+coefplot(income1)
+```
 
 
 
