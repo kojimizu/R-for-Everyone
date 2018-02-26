@@ -2622,7 +2622,101 @@ require(coefplot)
 coefplot(income1)
 ```
 
+# Chapter18: Model Evaluation 
+Resdual analysis, ANOVA test, Wald test, AIC, BIC score, cross validation error, bootstrap are used to evaluate models.
 
+## Section 18.1: Residuals
+- dataset:housing
+- data cleaning: outlier exclusion
+```{r}
+housing <- read.table("http://jaredlander.com/data/housing.csv", sep = ",", header = TRUE, stringsAsFactors = FALSE)
+names(housing) <- c("Neighborhood", "Class", "Units", "YearBuilt", 
+                    "SqFt", "Income", "IncomePerSqFt", "Expense",
+                    "ExpensePerSqFt","NetIncome", "Value", "ValuePerSqFt",
+                    "Boro")
+
+head(housing)
+```
+
+```{r}
+##outlier exclusion
+require(ggplot2)
+ggplot(housing, aes(x=Units,y=ValuePerSqFt))+geom_point()
+housing <-housing[housing$Units < 1000,]
+head(housing)
+ggplot(housing, aes(x=Units,y=ValuePerSqFt))+geom_point()
+```
+
+Then, we will fit a linear model.
+```{r}
+# Model estimation
+house1 <- lm(ValuePerSqFt ~ Units + SqFt + Boro, data = housing)
+summary(house1)
+require(coefplot)
+coefplot(house1)
+```
+
+There are three types of residual plots; model fitness (fitted value vs residual), Q-Q plot, residual histogram.
+
+(1) model fitting (fitted value vs residual)
+```{r}
+# residual plot
+require(ggplot2)
+
+## check enforced linear model
+head(fortify(house1))
+
+h1 <- ggplot(aes(x=.fitted, y=.resid), data=house1) +
+  geom_point() + geom_hline(yintercept =0) + geom_smooth(se = FALSE)+  
+  labs(x="Fitted Value", y="Residuals")
+
+h1
+```
+
+From the above graph, the residual is not disperced as expected, but the reason is the data structure by Boro (district) variable.
+
+```{r}
+h1 + geom_point(aes(color=Boro))
+```
+
+This chart is not visually good, but it easy to depict it using the basic graph function.
+```{r}
+plot(house1, which=1)
+
+# color change by Boro function
+plot (house1, which=1, col = as.numeric(factor(house1$model$Boro)))
+
+#label
+legend("topright", legend=levels(factor(house1$model$Boro)), pch=1,
+       col=as.numeric(factor(levels(factor(house1$model$Boro)))),
+       text.col=as.numeric(factor(levels(factor(house1$model$Boro)))),title="Boro")
+```
+
+(2) Q-Q plot
+If we could fit the model well, the standardized resiaul is plotted based on te normal distribution.
+```{r}
+# Q-Q Plot
+plot(house1, which = 2)
+ggplot(house1, aes(sample = .stdresid))+stat_qq()+geom_abline()
+```
+
+(3) Residual histogram
+For this case, the model is not fitted perfectly to the normal distribution.
+```{r}
+# Residual plot by histogram
+ggplot(house1, aes(x=.resid)) + geom_histogram()
+```
+
+## 18.2 Model Comparison
+When we compare multiple models, we should compute model fitness.
+```{r}
+## 18.2 Model comparison
+house2<-lm(ValuePerSqFt ~ Units + SqFt + Boro, data = housing) 
+house3<-lm(ValuePerSqFt ~ Units + SqFt*Boro + Class, data = housing)
+house4<-lm(ValuePerSqFt ~ Units + SqFt*Boro + SqFt*Class, data = housing)
+house5<-lm(ValuePerSqFt ~ Boro + Class, data = housing)
+
+``
 
 
 
