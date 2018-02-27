@@ -2709,14 +2709,236 @@ ggplot(house1, aes(x=.resid)) + geom_histogram()
 
 ## 18.2 Model Comparison
 When we compare multiple models, we should compute model fitness.
+
+We prepare multiple models with varied combination of variables.
 ```{r}
 ## 18.2 Model comparison
 house2<-lm(ValuePerSqFt ~ Units + SqFt + Boro, data = housing) 
 house3<-lm(ValuePerSqFt ~ Units + SqFt*Boro + Class, data = housing)
 house4<-lm(ValuePerSqFt ~ Units + SqFt*Boro + SqFt*Class, data = housing)
 house5<-lm(ValuePerSqFt ~ Boro + Class, data = housing)
+```
 
-``
+We can plot coefficients of multiple models by multiplot() funciton.
+- multiplot(): coefplot package
+```{r}
+require(coefplot)
+multiplot(house2, house3, house4, house5, pointSize = 2)
+```
+
+ANOVA test is not recommended for multiple sample test, but could be usefl for comparing multiple models. When we input multiple models into anova() function, we could show the results of RSS.
+
+```{r}
+# ANOVA test
+anova(house2, house3, house4, house5)
+```
+
+From ANOVA test, hour4 has lowest RSS, impyling that this is the best fitting model. However, RSS is increased as variables are added to the model (over-fitting model). Other than ANOVA, AIC (Akaike Information Criteria) and BIC (Bayze Information Criteria) are used for model evalution.
+- AIC, BIC
+ln(L) is the maximum log-likelihood, and p is the number of coefficients. AIC becomes lower as the model fits better. When we add variables, AIC increases (but penalty imposed on the model complexity).BIC uses log-number of rows (ie ln(n)) instead of 2*p. 
+$$
+AIC = -2 ln(L) + 2p
+BIC = -2 ln(L) + ln(n)*p
+$$
+```{r}
+AIC(house2, house3, house4, house5)
+BIC(house2, house3, house4, house5)
+```
+
+When we use glm model, anova() function returns the deviation value (indicating model residual). We see sample examples, fitting several logistic models.
+```{r}
+# data categorization <ValuePerSqFt >= 150>
+housing$HighValue <- housing$ValuePerSqFt >= 150
+
+high1<-glm(HighValue ~ Units + SqFt + Boro, data = housing, family=binomial(link = "logit")) 
+high2<-glm(HighValue ~ Units * SqFt + Boro, data = housing, family=binomial(link = "logit")) 
+high3<-glm(HighValue ~ Units + SqFt * Boro + Class, data = housing, family=binomial(link = "logit")) 
+high4<-glm(HighValue ~ Units + SqFt * Boro + SqFt * Class, data = housing, family=binomial(link = "logit")) 
+high5<-glm(HighValue ~ Boro + Class, data = housing, family=binomial(link = "logit")) 
+
+# model evaluation
+anova (high1, high2, high3, high4, high5)
+AIC (high1, high2, high3, high4, high5)
+BIC (high1, high2, high3, high4, high5)
+```
+
+## 18.3 Cross validation
+Cross validation is used o evaluate model, and cross validation divides the data into non-duplicate k sets, and apply model for k-1 sets, and use one set for prediction. 
+
+First, we will look at the cv function for glm, and overview general framework.
+- cv.glm() function: boot package
+
+```{r}
+require(boot)
+
+#glm model set
+houseG1 <-glm(ValuePerSqFt ~ Units + SqFt + Boro, data=housing, family=gaussian(link = "identity"))
+houseG1
+
+# cross validation with k=5
+houseCV1<-cv.glm(housing,houseG1,K=5)
+houseCV1$delta
+```
+
+cv.glm results return two values: (1) cross valudation error for all sub-divided sets based on the cost function (defined in the below formula), (2) cv error adjusted due to non-use of leave-one-out corss validation (similar to K-fold cross validation)
+
+(18.3) $$MSE = \frac{1}{n}\Sigma_{i=1}^n (\hat{y_i}-y_i)^2$$
+
+These values are useful only when we compare mutiple models, thus we construct other models and calcuate cross validation error.
+```{r}
+##model selection
+houseG2 <-glm(ValuePerSqFt ~ Units + SqFt + Boro, data=housing, family=gaussian(link = "identity"))
+houseG3 <-glm(ValuePerSqFt ~ Units + SqFt * Boro + Class, data=housing, family=gaussian(link = "identity"))
+houseG4 <-glm(ValuePerSqFt ~ Units + SqFt + Boro + SqFt * Class, data=housing, family=gaussian(link = "identity"))
+houseG5 <-glm(ValuePerSqFt ~ Boro + Class, data=housing, family=gaussian(link = "identity"))
+
+# cross validation computation
+houseCV2 <- cv.glm(housing,houseG2, K=5)
+houseCV3 <- cv.glm(housing,houseG3, K=5)
+houseCV4 <- cv.glm(housing,houseG4, K=5)
+houseCV5 <- cv.glm(housing,houseG5, K=5)
+```
+
+We summarize cross validation results of the models. 
+```{r}
+cvResults <- as.data.frame(rbind(houseCV1$delta, houseCV2$delta, 
+                           houseCV3$delta, houseCV4$delta,
+                           houseCV5$delta))
+names(cvResults) <- c("Error", "Ajudsted.Error")
+cvResults$Model <- sprintf("houseG%s", 1:5)
+cvResults
+```
+
+From this model, model 3 is again the best fitted. We would visualize ANOVA, AIC, cross validation.
+```{r}
+
+##visualization model comparison (ANOVA, AC, cross-validation)
+#ANOVA test
+cvANOVA <- anova(houseG1, houseG2, houseG3, houseG4, houseG5)
+cvResults$ANOVA <- cvANOVA$`Resid. Dev`
+edit(cvResults)
+
+# AIC calculation
+cvResults$AIC<-AIC(houseG1, houseG2, houseG3, houseG4, houseG5)$AIC
+cvResults
+
+# data.frame forming
+require(reshape2)
+cvMelt<-melt(cvResults, id.vars="Model", 
+              variable.name="Measure", value.name="Value")
+cvMelt
+ggplot(cvMelt, aes(x=Model, y=Value))+
+  geom_line(aes(group=Measure, color=Measure))+
+  facet_wrap(~Measure, scales="free_y")+
+  theme(axis.text.x=element_text(angle=90,vjust=.5))+
+  guides(color=FALSE)
+
+```
+
+From now, we look at the general corss validation method. 
+```{r}
+# general cross-validation
+cv.work<-function(fun, k=5, data, 
+                    cost = function(y,yhat) mean((y -yhat)^2),
+                    response="y",...)
+{
+  # generation of folds variables
+  folds<-data.frame(Fold=sample(rep(x=1:k, length.out=nrow(data))),
+                    Row=1:nrow(data))
+  # takes error=0
+  error<- 0
+  
+  #loop each folds and model application to training data
+  #forecast based on test data
+  #error calculation
+  for(f in 1:max(folds$Fold))
+  {
+    #extract rows corresponding to test data
+    theRows <- folds$Row[folds$Fold == f]
+    
+    ## application of fun to data[-theRows,]
+    ## forecast against data[theRows,]
+    mod <- fun(data=data[-theRows,],...)
+    pred <- predict(mod, data[theRows,])
+    
+    # accumulate error weighted by rows corresponding to fold
+    error <- error +
+      cost(data[theRows,response],pred)*
+      (length(theRows)/nrow(data))
+      }
+  return(error)
+  }
+```
+
+We apply housing models to obtain cross validation errors.
+```{r}
+cv1<-cv.work(fun=lm, k=5, data=housing, response="ValuePerSqFt",
+             formula =ValuePerSqFt ~ Units + SqFt + Boro)
+cv2<-cv.work(fun=lm, k=5, data=housing, response="ValuePerSqFt",
+             formula =ValuePerSqFt ~ Units * SqFt + Boro)
+cv3<-cv.work(fun=lm, k=5, data=housing, response="ValuePerSqFt",
+             formula =ValuePerSqFt ~ Units + SqFt * Boro + Class)
+cv4<-cv.work(fun=lm, k=5, data=housing, response="ValuePerSqFt",
+             formula =ValuePerSqFt ~ Units + SqFt * Boro + SqFt * Class)
+cv5<-cv.work(fun=lm, k=5, data=housing, response="ValuePerSqFt",
+             formula =ValuePerSqFt ~ Boro + Class)
+cvResults <- data.frame(Model=sprintf("house%s", 1:5),
+                        Error=c(cv1, cv2, cv3, cv4, cv5))
+cvResults
+```
+
+## 18.4 Bootstrap method
+
+[N-row data]
+1. We apply mean/regression and other functions
+2. We prepare a new dataset by sampling data. This new dataset has n rows (non-duplicate, non-missing values).
+3. We apply statistical functions to the new set, and interate the process for R times, and generate distribution. 
+4. Finally, this distribution is used for mean and confidential interval (95% interval)
+
+Boot package is a strong package for easily calculating bootstrap method.
+```{r}
+require(plyr)
+baseball <- baseball[baseball$year>=1990,]
+head(baseball)
+```
+
+
+We start with simple example: calculate average hitting rate (baseball data includes bats(ab) and hits(h)). The average hitting rate is calculated dividing total hits by total bats. However, we cannot calculate average/standard deviation by mean(h/ab), sd(h/ab) (simply we can claculate hitting rate by sum(h)/sum(ab)).
+
+First we calculate overall hitting rate, and sampling n rows to calculate average hitting rate. We iterate this process until we generate distribution, by boot package. 
+
+boot() function: 
+- first argument: data
+- second argument: function to be applied (at least two arguments are required: (1) original data, (2) vector for serach, (3) times or weight). 
+```{r}
+
+# We define function to calculate average hitting rate 
+
+bat.avg <- function(data, indices=1:NROW(data), hits="h",
+                    at.bats="ab")
+{
+  sum(data[indices,hits], na.rm=TRUE) /
+    sum(data[indices,at.bats],nar.rm=TRUE)
+}
+bat.avg(baseball)
+```
+
+
+
+
+
+## 18.5 Step wise variable selection method
+
+
+
+
+# Chapter 19: Regularization and Shrinkage
+## 19.1 Elastic Net
+
+
+
+
+
 
 
 
