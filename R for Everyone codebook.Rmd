@@ -2902,7 +2902,6 @@ baseball <- baseball[baseball$year>=1990,]
 head(baseball)
 ```
 
-
 We start with simple example: calculate average hitting rate (baseball data includes bats(ab) and hits(h)). The average hitting rate is calculated dividing total hits by total bats. However, we cannot calculate average/standard deviation by mean(h/ab), sd(h/ab) (simply we can claculate hitting rate by sum(h)/sum(ab)).
 
 First we calculate overall hitting rate, and sampling n rows to calculate average hitting rate. We iterate this process until we generate distribution, by boot package. 
@@ -2923,22 +2922,572 @@ bat.avg <- function(data, indices=1:NROW(data), hits="h",
 bat.avg(baseball)
 ```
 
+We would replicate the above claculation by bootstrap.
+```{r}
+# Use of bootstrap method 
+# 1200 loop (data:baseball, bat.avg function)
+require(boot)
+avgBoot<-boot(data=baseball, statistic=bat.avg, R=1200, stype="i")
 
+# show orginal values, bias estimate, standard diviation
+avgBoot
 
+# confidence interval
+boo.ci(avgBoot, conf=.95, type="norm")
+```
 
+The simplest method to visualize is to use histogram.
+```{r}
+ggplot()+
+  geom_histogram(aes(avgBoot$t), fill="grey",color="grey")+
+  geom_vline(xintercept=avgBoot$t0 + c(-1,1)*2*sqrt(var(avgBoot$t)),
+             linetype=2)
+```
+
+Bootstrap is a powerful tool, and can be applied broadly for time series data etc.(except for estimate uncertainty of biased parameter such as lasso).
 
 ## 18.5 Step wise variable selection method
+Generally it is not recommended, but step wise selection method is also for model variable selection.
 
+step() function iterates process for potential models:
+- scope argument: upper and lower limit of the model
+- direction argument: add/deduct variable
 
+```{r}
 
+# lower model is Null model
+nullModel<-lm(ValuePerSqFt ~1, data=housing)
+# maximum model is full model
+fullModel<-lm(ValuePerSqFt~Units+SqFt*Boro+Boro*Class, data=housing)
+
+# Set add/deduct variables from null model to full model
+houseStep<-step(nullModel, scope=list(lower=nullModel, upper=fullModel),
+                direction="both")
+houseStep
+```
 
 # Chapter 19: Regularization and Shrinkage
+
+Methods to prevent over-fitting is required, and the variable selection method was used. Howeer, as the variables used increases, aliternative method is required by regularization/shrinkage. glmnet package (glmnet function) and arm package (bayesglm function) are introduced.
+
 ## 19.1 Elastic Net
+Elastic Net is a dynamic combination of Lasso regression and ridge regression. Lasso conducts variable selection and shrinkage by L1 penalty.
+$$
+min_{\beta_0,\beta} [\frac{1}{2N}\Sigma_{i=1}^N(y_i-\beta_0-x_i^t\beta)^2+\lambda P_\alpha(\beta)] \\
+where, P_\alpha(\beta)=(1-\alpha)frac{1}{2}||\beta||_{l_2}^2+\alpha||\beta||_{l_1}
+$$
+In the above definition, lambda is a complexity variable to control shrinkage values (no penalty if its 0), and adjust the ration of Ridge and Lasso. If the alpha equals 0, it is ridge regression, while its a lasso if alpha = 1. 
+
+glmnet package is useful for applying glm model with elastic net. glmnet requires matrix for predictors and returns its results in matrix.
+
+dataset: American community survey(ACS) in NY state
+http://jaredlander.com/data/acs_ny.csv
+
+```{r}
+acs <- read.table("http://jaredlander.com/data/acs_ny.csv", sep=",",header=TRUE, stringsAsFactors=FALSE)
+```
+
+As glmnet requires matrix of predictors, we can prepare it by model.matrix() function. 
+- model.matrix: formula + data.frame in argument
+
+```{r}
+testFrame <- data.frame(First=sample(1:10,20,replace=TRUE),
+                        Second=sample(1:20,20,replace=TRUE),
+                        Third=sample(1:10,20,replace=TRUE),
+                        Fourth=factor(rep(c("Alice", "Bob", "Charlie","David"),
+                                          5)),
+                        Fifth=ordered(rep(c("Edward","Frank","Georgia","Hank","Isaac"),4)),
+                        Sixth=rep(c("a","b"),10),stringsAsFactors = F)
+head(testFrame)
+
+head(model.matrix(First~Second+Fourth+Fifth,data=testFrame))
+```
+
+As shown in the above example, Fourth variable is converted to indicator variable (level - 1 number).In additionl, Fifrt is order function. However, such generation of indicator variables (level-1 numbers) is no recommended for Elastic net. We use build.x() function.
+
+```{r}
+# use all levels for variables
+require(useful)
+head (build.x(First~Second+Fourth+Fifth, data=testFrame, contrasts=FALSE))
+
+# use all levels only for Fourth
+head (build.x(First~Second+Fourth+Fifth, data=testFrame, contrasts=c(Fourth=FALSE,Fifth=TRUE)))
+
+```
+
+When the build.x is used appropriately for acs, we can make a predictor matrix for glmnet.
+
+```{r}
+# binary values of income variable is prepared for logistic regression 
+acs$Income <- with(acs, FamilyIncome>=150000)
+head(acs)
+
+# Generation of predictor matrix
+# axis is automatically added by glmnet function
+acsX <- build.x(Income ~ NumBedrooms + NumChildren + NumPeople + 
+                  NumRooms + NumUnits + NumVehicles + NumWorkers +
+                  OwnRent * YearBuilt + ElectricBill + FoodStamp +
+                  HeatingFuel + Insurance + Language -1,
+                data = acs, contrasts = FALSE)
+
+# check class and dimension
+class(acsX)
+dim(acsX)
+
+# check top-left and right-bottom data
+topleft(acsX,c=6)
+topright(acsX,c=6)
+
+# generation of response matrix
+acsY <- build.y (Income ~NumBedrooms + NumChildren + NumPeople +
+                   NumRooms + NumUnits + NumVehicles + NumWorkers+
+                   OwnRent + YearBuilt + ElectricBill + FoodStamp +
+                   HeatingFuel + Insurance + Language -1, data=acs)
+
+head(acsY)
+tail(acsY)
+
+
+```
+
+We have stored data in the above process, and we are now ready to run glmnet function. As briefly overviewd, lamda controls shrinkage, and optimal value can be determined based on cross-validation (e.g., cv.glmnet).With alpha=1, the default setting is lasso regression, and another layer of cross validation needs to be added for calculating optimal alpha.
+
+```{r}
+# Cross-validation package installation
+install.packages("glmnet")
+require(glmnet)
+set.seed(1863561)
+
+#cross-validation by glmnet
+acsCV1 <- cv.glmnet(x=acsX, y=acsY, family="binomial", nfold=5)
+
+acsCV1$lambda.min
+acsCV1$lambda.1se
+
+# validation error plot - dot=validation error, line=confidence interval
+plot(acsCV1)
+
+
+
+# coefficient plot
+coef(acsCV1, s="lambda.1se")
+
+```
+
+In the returned values from cv.glmnet, lamda is crucial as it minimizes cross validation and cross validation error. Further more, cv.glmnet returns max lamda satisfying the cv error within the min+1sd.
+
+It might be strange that only several factors are selected and others not. Also, coefficients do not have standard deviation nor confidence interval. We can visualize when variables are added to the model.
+```{r}
+# coefficient path plot
+plot(acsCV1$glmnet.fit, xvar="lambda")
+
+# insert vertical line for the optimal lambda
+abline(v=log(c(acsCV1$lambda.min,acsCV1$lambda.1se)),lty=2)
+
+```
+
+When alpha=0, the result shows the ridge regression. In the case of ridge regression, all variables are kept in the model,shrinked to 0. We apply the ridge model.
+```{r}
+# Ridge model 
+set.seed(71623)
+acsCv2<-cv.glmnet(x=acsX,y=acsY, family="binomial", nfold=5,
+                  alpha=0)
+# check lambda
+acsCv2$lambda.min
+acsCv2$lambda.1se
+
+# check coefficients
+coef(acsCv2, s="lambda.1se")
+
+# depict cross validation error path(line)
+plot(acsCv2)
+
+# depict coefficient path 
+plot(acsCv2$glmnet.fit,xvar="lambda")
+abline(v=log(c(acsCv2$lambda.min,acsCv2$lambda.1se)),lty=2)
+
+```
+
+To calculate optimal alpha, we need to add cross validation for alpha. 
+
+
+As glmnet does not calculate automatically, we need to run cv.glmnet for various alpha values. The esiest methods are (1) parallel, (2) doParallel and (3) foreach packages.
+```{r}
+## computation of optimal alpha
+require(parallel)
+install.packages ("doParallel")
+require(doParallel)
+```
+
+Generally, it is considered ridge is better than lasso, thus alpha>0.5 is considered.As supplementary objects, we prepare a vector, and matrix of alpha by foreach loop.
+```{r}
+## random number generation (fixed for reproduction)
+set.seed(2834673)
+
+## pair that each iteration is with same observation
+theFolds <-sample(rep(x=1:5,length.out = nrow(acsX)))
+
+# prepare a matrix of alpha 
+alphas <- seq(from=0.5,to=1,by=0.05)
+```
+
+For parallel processing, we need to regiseter start/end of cluster. 
+- start: makeCluster() function
+- registration: registerDoPArallel() function
+- stop:stopCluster() function
+<argument>
+- .errohandling=remove: skip error iteration
+- .inorder=FALSE: non-identical for the order of results combining
+```{r}
+## random number set(reproductivity of random results)
+set.seed(5127151)
+
+# start cluster in two workers
+cl <- makeCluster(2)
+
+## register cluster
+registerDoParallel(cl)
+
+## record beginning time
+before <- Sys.time()
+
+## argument set
+## set foreach loop 
+
+acsDouble <- foreach(i=1:length(alphas),.errorhandling = "remove",
+                     .inorder = FALSE, .multicombine = TRUE,
+                     .export = c("acsX","acsY","alphas","theFolds"),
+                     .packages = "glmnet") %dopar%
+
+{ 
+  print(alphas[i])
+  cv.glmnet(x=acsX, y=acsY, family=binomial,nfolds=5,
+            foldid=theFolds, alpha=alphas[i])
+  }
+
+# record stop time
+after <- Sys.time()
+# stop cluster
+stopCluster(cl)
+
+# stop time - beginning time
+after - before
+```
+
+The results (acsDouble) is a list of 11 cv.glmnet objects, and can be checked by sapplying class to each element of list. 
+```{r}
+sapply(acsDouble, class)
+```
+
+The purpose was to calculate best combination of lambda and alpha, thus we need to code to extract lamda and cross validation error from each list element.
+```{r}
+extractGlmnetInfo <- function(object)
+{
+  lambdaMin <- object$lambda.min
+  lambda1se <- object$lambda.1se
+  
+  whichMin <- which(object$lambda == lambdaMin)
+  which1se <- which(object$lambda == lambda1se)
+  
+  data.frame(lambda.min=lambda$Min, err.min=object$cvm[whichMin],
+             lambda.1se=lambda1se,error.1se=object$cvm[which1se])
+  }
+
+alphaInfo <- Reduce(rbind,lapply(acsDouble,extractGlmnetInfo))
+alphaInfo2 <- plyr::ldply(acsDouble, extractGlmnetInfo)
+identical (alphaInfo,alphaInfo2)
+
+alphaInfo$alpha <-alphas
+alphaInfo
+
+```
+
+```{r}
+require(reshape2)
+require(stringr)
+
+alphaMelt <- melt(alphaInfo, id.vars="alpha", value.name="Value",
+                  variable.name="Measure")
+alphaMelt$Type <- str_extract(string=alphaMelt$Measure,
+                              pattern="(min|(1se")
+alphaMelt$Measure <- str_replace(string=alphaMelt$Measure,
+                                 pattern="nn.(min|1se)",
+                                 replacement="")
+alphaMelt$Cast <- dcast(alphaMelt,alpha+Type ? Measure, 
+                                 value.var="Value")
+
+ggplot(alphaCast, aes(x=Alpha, y=error))+
+  geom_line(aes(group=Type))+
+  facet_wrap(~Type,scales="free_y",ncol=1)+
+  geom_point(aes(size=lambda))
+```
+
+From the above, the best alpha is 0.75. We check it apllying such value to the model. 
+```{r}
+set.seed(5127151)
+acsCV3 <- cv.glmnet(x=acsX,y=acsY,family="binomial",nfold=5,                    alpha=alphaInfo$alpha[which.min(alphaInfo$error.1se)])
+
+plot(acsCV3)
+plot(acsCV3$glmnet.fit,xvar="lambda")
+abline(v=log(c(acsCV3$lambda.min,acsCV3$lambda.1se)),lty=2)
+```
+
+## 19.2 Bayesian Shrinkage
+dataset: http://jaredlander.com/data/ideo.rdata
+
+```{r}
+
+load("C:/Users/kojikm.mizumura/Downloads/ideo.rdata")
+head(ideo)
+
+theYears <- unique(ideo$Year)
+results <- vector(mode="list",length=length(theYears))
+names(results) <-theYears
+
+# prep of multiple models
+for (i in theYears)
+{
+  results[[as.character(i)]] <- glm(Vote~Race+Income+Gender+
+                                      Education,
+                                    data=ideo,subset=Year==i,
+                                    family=binomial(link="logit"))
+}
+
+#coefficient plot
+require(coefplot)
+voteInfo <- multiplot(results, coefficients="Raceblack",plot=FALSE)
+head(voteInfo)
+multiplot(results, coefficients="Raceblack", secret.weapon = TRUE)+
+  coord_flip(xlim=c(-20,10))
+
+install.packages("arm")
+
+# we put pre-distribution on each model coefficient
+resultsB <- vector(mode="list",length=length(theYears))
+names(resultsB) <- theYears
+
+for(i in theYears)
+{ resultsB[as.character(i)]<-
+   arm::bayesglm(Vote~Race+Income+Gender+Education,
+                data=ideo[ideo$Year==i,],
+                family=binomial(link="logit"),
+                prior.scale=2.5,prior.df=1)}
+
+# coefficient plot
+multiplot(resultsB, coefficients="Raceblack",secret.weapon = TRUE)
+```
+
+# Chapter 20. Non-linear model
+## 20.1. Non-linear least regression method
+
+Non-linear (parameteric) least regression model uses squared error loss to find optimal parameters.
+
+$$
+y_i=f(x_i,\beta)
+$$
+As an non-linear least regression model, we consider problem of detecting the location of WIFI hotspot, by optimizing the distance between hotspot and device (location fixed)
+data: http://jaredlander.com/data/wifi.rdata
+
+```{r}
+load("C:/Users/kojikm.mizumura/Downloads/wifi.rdata")
+head(wifi)
+
+```
+
+This dataset can be visually checked with ggplot() function.
+```{r}
+
+# ggplot x-axis:device location ,y-axis:device location, color:distance from hotspot
+
+require(ggplot2)
+ggplot(data=wifi, aes(x=x,y=y,col=Distance))+geom_point()+
+  scale_color_gradient2(low="blue",mid="white",high="red",
+                       midpoint=mean(wifi$Distance))
+
+```
+
+The distance between device i and hotspot is measured as: 
+$$
+d_i=\sqrt{(\beta_x-x_i)^2+(\beta_y-y_i)^2}
+$$
+The Non-linear least regression is conducted with nls() function. Typically, non-linear problem is solved by numerical computation methods, sensitive to initial values.
+- argument: formula
+- initial value: given as a list
+```{r}
+
+wifiMod1 <- nls(Distance~sqrt((betaX-x)^2+(betaY-y)^2),
+                data=wifi,start=list(betaX=50,betaY=50))
+summary(wifiMod1)
+```
+
+Thus, we plot the optimal location of wifi hotspot.
+```{r}
+ggplot(data=wifi, aes(x=x,y=y,col=Distance))+geom_point()+
+  scale_color_gradient2(low="blue",mid="white",high="red",
+                       midpoint=mean(wifi$Distance))+
+  geom_point(data=as.data.frame(t(coef(wifiMod1))),
+             aes(x=betaX,y=betaY),size=5,color="green")
+```
+
+## 20.2 Splines
+Smoothing spline mthod can be applied smoothly to the data with non-linear characteristics.Spline function f is a function of linear combination of N functions (x variables). These N functions correspond to each data point.
+$$
+f(x) = \Sigma_{j=1}^N N_j (x) \theta_j
+$$
+The objective is to find f minimzing the below RSS.
+- lambda:smoothing paramater (when lambda is small, rough, otherwise smooth)
+
+$$
+RSS (f,\lambda) = \Sigma_{i=1}^N (y_i-f(x_i))^2+\lambda\int (f^{''}(t))^2 t
+$$
+Spline can be applied by smoooth.spline() function, and this rfunction returns list, x = non-duplicate values, df=degree of freedom. 
+-dataset: diamonds
+
+```{r}
+data(diamonds)
+
+diaSpline1<- smooth.spline(x=diamonds$carat,y=diamonds$price)
+diaSpline2<- smooth.spline(x=diamonds$carat,y=diamonds$price, df=2)
+diaSpline3<- smooth.spline(x=diamonds$carat,y=diamonds$price, df=10)
+diaSpline4<- smooth.spline(x=diamonds$carat,y=diamonds$price, df=20)
+diaSpline5<- smooth.spline(x=diamonds$carat,y=diamonds$price, df=50)
+diaSpline6<- smooth.spline(x=diamonds$carat,y=diamonds$price, df=100)
+```
+
+To plot the results, we make a data frame by extracting info from object. As the degree of feedom is small, it becomes linear, otherwise the line will be inclined to the data. 
+```{r}
+get.spline.info <- function(object)
+{
+ data.frame(x=object$x,y=object$y, df=object$df) 
+}
+
+require(plyr)
+splineDF<-ldply(list(diaSpline1,diaSpline2,diaSpline3,
+                     diaSpline4,diaSpline5,diaSpline6),
+                get.spline.info)
+head(splineDF)
+g<- ggplot(diamonds,aes(x=carat,y=price))+geom_point()
+g + geom_line(data=splineDF,
+              aes(x=x,y=y,color=factor(round(df,0)),
+                  group=df))+scale_color_discrete("Digrees of \nFreedom")
+```
+
+Another type of spline is B-spline. This model converts the original predictors into a new predictive factors. The best B-spline is three-dimensional natural spline. 
+- smooth until the breakpoinnt and becomes linear afterward
+
+In the model, K breakpoints (knots) are considered in the spline model, and we prepare K basis functions. 
+
+$$
+N_1(X)=1, N_2(X)=X,..,N_{K+2}=d_k(X)-d_{K-1}(X)
+$$
+,where
+$$
+d_k(X)=\frac{(X-\epsilon_k)^3_+-}{}
+$$
+The three-dimensional natural spline can be easily applied with ns() function in the splines package. The argument of the function is the number of predictive variables, and new variables to be returned.
+
+```{r}
+require(splines)
+head(ns(diamonds$carat,df=1))
+head(ns(diamonds$carat,df=2))
+head(ns(diamonds$carat,df=3))
+head(ns(diamonds$carat,df=4))
+```
+
+The predictors can be applied to any model, smooother with more knots. The below charts show ggplot with six/three knots again diamonds data.
+```{r}
+g<-ggplot(diamonds,aes(x=carat,y=price))+geom_point()
+g+stat_smooth(method="lm",formula=y~ns(x,6),color="blue")
+g+stat_smooth(method="lm",formula=y~ns(x,3),color="blue")
+```
+
+
+## 20.3. Generalized Additive Model 
+Another non-linear model is generalized additive model (GAM). In GAM, independent smoothing function is applied to each predictor respectively. The response variable can be continuous, binary, count etc. 
+
+$$
+E(Y|X_1,X,2,...,X_p)=\alpha+f_1(X_1)+f_2(X_2)+...+f_p(X_p)
+$$
+, where X is predictor, fj is smoothing function.
+
+mgcv package can be used to apply GAM, with similar sytax as glm. 
+
+Dataset: credit score data (http://archive.ics.uci.edu/ml/datasets/Statlog+(German+Credit+Data))
+
+This is text file with space, no header. 
+
+We are going to load the data read.table() function. First we name each column. We do not include header, and col.names=creditNames. 
+
+```{r}
+creditNames <- c("Checking","Duration","CreditHistory","Purpose",
+                 "CreditAmount","Savings","Employment","InstallmentRate",
+                 "GenderMartal","OtherDebtors","YearsAtResidence","RealEstate",
+                 "Age","OtherInstallment","Housing","ExistingCredits",
+                 "Job","NumLiable","Phone","Foregin","Credit")
+```
+
+```{r}
+## read.table() to read the file (no header)
+## CreditNames is to be used for columnName
+theURL<-"http://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.data"
+credit<-read.table(theURL, sep="",header=FALSE,
+                   col.names=creditNames,
+                   stringsAsFactors = FALSE)
+head(credit)
+```
+
+We need to convert coded data, and the simplest wat is to make a named vector (name=code, value=converted data). 
+```{r}
+# pre-conversion
+head(credit[,c("CreditHistory","Purpose","Employment","Credit")])
+
+creditHistory<-c(A30="All Paid",A31="All Paid This Bank",
+                 A32="Up To Date", A33="Late Payment",
+                 A34="Critical Account")
+
+purpose<-c(A40="car(new)",A41="car(used)",
+           A42="furniture/equipment", A43="radio/television",
+           A44="domestic appliances",A45="repairs",
+           A46="education",A47="(vacation - does not exist?)",
+           A48="retraining",A49="business",A410="others")
+
+employment<-c(A71="unemployed",A72="<1 year",
+              A73="1-4 years",A74="4-7 years",A75=">= 7 years")
+
+
+credit$CreditHistory<-creditHistory[credit$CreditHistory]
+credit$Purpose<-purpose[credit$Purpose]
+credit$Employment<-employment[credit$Employment]
+
+## change of credit format (Good/Bad)
+credit$Credit<-ifelse(credit$Credit==1,"Good","Bad")
+credit$Credit<-factor(credit$Credit,levels=c("Good","Bad"))
+
+head(credit[,c("CreditHistory","Purpose","Employment","Credit")])
+```
+
+As the data does not show any linear relatinship, we consider GAM as an option.
+```{r}
+## ggplot
+require(useful)
+
+ggplot(credit, aes(x=CreditAmount,y=Credit))+
+  geom_jitter(position=position_jitter(height=.2))+
+  facet_grid(CreditHistory ~ Employment)+
+  xlab("Credit Amount")+
+  theme(axis.text.x=element_text(angle=90,hjust=1,vjust=.5))+
+  scale_x_continuous(labels=multiple)
+
+ggplot(credit,aes(x=CreditAmount,y=Age))+
+  geom_point(aes(color=Credit))+
+  facet_grid(CreditHistory~Employment)+
+  xlab("Credit Amount")+
+  theme(axis.text.x=element_text(angle=90,hjust=1,vjust=.5))+
+  scale_x_continuous(labels=multiple)
+```
 
 
 
 
-
-
-
+## 20.4 Decision Tree Model 
 
