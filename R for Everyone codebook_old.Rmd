@@ -1,0 +1,2765 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+R for Everyone Codebook 
+Code review 
+Chap5: - 2017/12/25
+Chap6: 2017/12/25 - 
+Chap7: 
+Chap11: 1/5
+Chap12: 1/6
+Chap13: 1/7
+Chap14: 
+
+- data()
+  - ggplot2: diamonds
+
+- function()
+  - XML: readHTMLTable, 
+
+---------------------------------
+# Chapter4: Basic command
+## 4.1 Basics
+## 4.2. Variable
+```{r}
+x<--2
+y=5
+assign("j",4)
+j
+```
+
+## 4.3 Data
+### 4.3.1 Numerical data
+```{r}
+class(x) #"numeric"
+is.numeric(x) #TRUE
+i<-5L #integer
+is.integer(i) #TRUE
+is.numeric(i) #TRUE
+class(4L) #integer
+class(2.8) #numeric
+```
+
+### 4.3.2 Text data
+```{r}
+x<-"data"
+y<-factor("data")
+y<-"data"
+class(x) #character
+nchar(x) #4 = number of character
+nchar(452) #3
+nchar(y) #error - y requires a character vector
+```
+
+### 4.3.3 date
+```{r}
+date1<-as.Date("2012-06-28")
+class(date1) #date
+as.numeric(date1) #15519
+
+date2<-as.POSIXct("2012-06-28 17:42")
+date2
+class(date2) #[1] "POSIXct" "POSIXt" 
+as.numeric(date2) #[1] 1340872920
+```
+
+Lubridate, chron packages are used to treate time or date such as an object.
+-as.numeric/as.date (): change the type of object
+```{r}
+class(date1) #date
+class(as.numeric(date1)) #numeric
+```
+
+### 4.3.4 Logical 
+logical is binary values eithrer TRUE(1) or FALSE (0)
+```{r}
+TRUE*5 #5
+FALSE*5 #0
+
+k<-TRUE
+class(k) 
+is.logical(k) #TRUE
+2==3
+2!=3
+2<3
+2<=3
+"data" < "stat" #number of character
+class("data")
+
+```
+
+## 4.4 Vector
+### 4.4.1 vector calculation
+We set the basic vector, and can calculate sum/deduct/devide without loop.
+```{r}
+x<-c(1,2,3,4,5,6)
+x+2
+x-3
+x^2
+sqrt(x)
+```
+
+c is the function to create a vector, and we can use ":" operator, to calculate sequential numbers. 
+```{r}
+1:10
+10:1
+-2:3
+5:-7
+```
+
+Vector operator can be expanded (e.g., there are two vectors with same length, and computation of each vector components once).
+```{r}
+x<-1:10
+y<--5:4
+x+y
+x-y
+x/y  
+x**y # x^y: x to yth power
+length(x)
+length(x*y)
+```
+
+Two vectors with different length needs more complex computation.
+Generally, a vector with shorter length is used multiple times. 
+
+```{r}
+x+c(1,2)
+x+c(1,2,3)
+
+x<=5
+x>y
+```
+
+All function is used to test whether all values satisfy comparative statistics. 
+```{r}
+x<- 10:1
+y<- -4:5
+all(x<y)
+```
+ 
+- nchar function is used toward each component of vector.
+```{r}
+q<-c("Hockey","Football","Baseball","Curling","Rugby",
+     "Lacrosse", "Bascketball","Tennis","Cricket","Soccer")
+nchar(q)
+nchar(y)
+```
+
+To access vector coponent, [] is used. To extract first component of x vector, x[1], x[1:2] for first two components. If components to be extracted are not sequential, x[c(1.4)] expression is usefl.
+```{r}
+x[1]
+x[1:2]
+x[c(1,4)]
+```
+
+The [] expression works for numeric, logical, character classes. We can also name vector before/after making a vector.
+```{r}
+c(One="a",Two="y",Last="r")
+w<-1:3
+names(w)<-c("a","b","c")
+w
+```
+
+### 4.4.2 Factor vector
+Factor is a crucial concept to construct a model.
+First, we add additional components to the vector q.
+```{r}
+q2<-c(q,"Hockey","LAcrosse","Hockey","Water Polo",
+      "Hockey","LAcrosse")
+```
+
+We can transform this vector into factor by as.factor function.
+```{r}
+q2Factor<-as.factor(q2)
+q2Factor
+```
+
+After q2Factor components are listed, levels are also listed. Factor's level lists non-duplicate figures. 
+
+```{r}
+as.numeric(q2Factor)
+```
+
+Geenrally, no attention to the order of levels is required for factor. In addition, all level are treated same. However, there are occations factor order becomes significant.Ordered argument is set TRUE so that factor is ordere according to level argument.
+```{r}
+factor(x=c("High School","College","Masters","Doctorate"),
+       levels=c("High School","College","Masters","Doctorate"),
+       ordered=TRUE)
+```
+
+Factor keeps identical items, we could reduce size of variables.
+
+## 4.6 Function command
+apropos() is useful to search specific function by keyword
+```{r}
+apropos("mea")
+?kmeans
+```
+
+## 4.7 Missing Value "?????l"
+Missing value plays an important role for statistics and calculation. There are two types of missing values; NA and NULL.
+
+### 4.7.1 NA
+NA is shown as a component of vector. is.na() could test whether there is any missing value in vector.
+- is.na: test existence of missing value
+```{r}
+z<-c(1,2,NA,8,3,NA,3)
+z
+is.na(z)
+```
+
+NA can be input by inserting NA, and corresonds to every class of vector. 
+```{r}
+zChar<-c("Hockey",NA,"LAcrosse")
+zChar
+is.na(zChar)
+```
+
+???d?????@ is a popular method to deal with statistical analysis. Details is available in chapter 25 of "Data Analysis Using Regression and Multilevel/Hierachical Models".
+
+### 4.7.2 NULL
+NULL cannot be insite vector, as it disappears in the vector after its used. 
+```{r}
+z<-c(1,NULL,3)
+z
+```
+
+NULL is not saved in the c vector.We can test if there is any NULL item by is.null function ().
+```{r}
+d<-NULL
+is.null(d)
+is.null(7)
+```
+
+---------------------------------
+#Chapter 5: High level data structure
+We can treat high dimentional/level data frame by R, with data.frame, matrix, list,array.
+
+## 5.1. data.frame
+data.frame is similar to excel spreadsheet with row/columns(obs - row, variables - columns).Each column has a same length vector, and can be treated with different class of data.The data.frame function () is frequently used to form data.frame.
+
+```{r}
+x<-10:1
+y<--4:5
+q<-c("Hockey","Football","Baseball","Curling","Rugby",
+     "Lacrosse","Bascketball","Tennis","Cricket","Soccer")
+theDF<-data.frame(x,y,q)
+theDF
+```
+
+In the above code, 10*3 data.frame was formed. Each column name can be changed in the data.frame function.
+```{r}
+theDF<-data.frame(First=x, Second=y, Sport=q)
+theDF
+```
+
+The data.frame is a complex obeject with multiple characters. To quickly check number of rows/colmns, nrow/ncolumn () functions are used.
+```{r}
+nrow(theDF)
+ncol(theDF)
+dim(theDF)
+```
+
+Name () function is used to check name of columns, and such column names can be changed easily. 
+```{r}
+names(theDF)
+names(theDF)[3]
+
+rownames(theDF)
+rownames(theDF)<- c("One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten")
+rownames(theDF)
+rownames(theDF)<-NULL
+rownames(theDF)
+```
+
+head () function is useful for checking first few rows. class function () can be used to detect data.frame.
+```{r}
+head(theDF)
+head(theDF,n=7)
+tail(theDF)
+class(theDF)
+```
+
+data.frame has each column as individual vector with different class, thus , thus we can access each column.For accesing specific row, argument "$" or "[]" could be used.
+
+```{r}
+theDF$Sport
+theDF[3,2] # For [], we need to input row/column no.
+theDF[3,2:3]
+theDF[c(3,5),2] #row3, 5 with column 2
+theDF[,c("First","Sport")]
+```
+
+```{r}
+#Sport column only
+theDF[,"Sport"]
+class(theDF[,"Sport"]) #factor is reverted as its only one column
+theDF["Sport"]
+class(theDF["Sport"])
+```
+
+drop=FALSE is set if we want to extract only one column data.frame with [].
+```{r}
+theDF[,"Sport",drop=FALSE]
+class(theDF[,"Sport",drop=FALSE])
+theDF[,3,drop=FALSE]
+class(theDF[,3,drop=FALSE])
+```
+
+In section 4.4.2, factor is a special class, and we would like to confirm that such class can be exressed in data.frame as well.
+- Model.matrix() is used with indicator variables (dummy).This results in 1 in case such row includes such level, otherwise 0.
+```{r}
+newFactor<-factor(c("Pennsylvania","New York","New JErsey","New York","Tennessee","Massachusetts","Pennsylvania","New York"))
+model.matrix(~newFactor-1)
+```
+
+## 5.2 List
+there is a case we need a List storing multiple types of objects.List can deal with numeric, character, both, and even data.frame.
+```{r}
+list(1,2,3) # three components
+list(c(1,2,3)) # one vector with three components
+
+list3<-list(c(1,2,3),3:7)
+# first: a vector with three comps
+# second: a vector with five comps
+
+list4<-list(theDF,1:10)
+list4
+# second: a vector with ten numbers
+```
+
+The list can be named with names() function. Use pair of name and figures when list is created to give name. 
+```{r}
+list5<-list(theDF, 1:10, list3)
+
+names(list5)
+names(list5)<-c("data.frame","vector","list")
+list5
+
+list6<-list(TheDataFrame=theDF, THeVector=1:10, TheList=list)
+names(list6)
+```
+
+Vector () function is used to make a ideal length of blank list. 
+```{r}
+(emptyList<-vector(mode="list",length=4))
+```
+
+To access each component of list, we should use [[]], and set number or name. By this function, only one item can be accessed.
+```{r}
+list5[[1]]
+list5[["data.frame"]]
+
+list5[[1]]$Sport
+list5[[1]][,"Second"]
+list5[[1]][,"Second",drop=FALSE]
+```
+
+To add new component to list, new syntax (number or name) is attached.
+```{r}
+length(list5)
+list5[[4]]<-2 #without name
+length(list5)
+
+list5[["NewElement"]]<-3:6
+list5
+```
+
+
+## 5.3 Matrix
+Matrix is a basic mathmatical structure. There are row, column, similar to data.frame, however, all components are required to be same class/type in matrix. The most common matrix is numeric, and add/deduct/multiply/divide can e calculated. - nrow ()
+- ncol ()
+- dim () functions are available
+```{r}
+A<-matrix(1:10,nrow=5)
+B<-matrix(21:30,nrow=5)
+C<-matrix(21:40,nrow=2)
+A
+B
+C
+```
+
+```{r}
+# matrix basic calculation
+# To calculate A*B, A's column and B'row need to be indentical
+A+B
+A*B
+A==B
+```
+
+Transposed matrix can be calculated with t() function. 
+
+```{r}
+# Transposed matrix
+A %*% t(B)
+colnames(A)<-c("Left","Right")
+rownames(A)<-c("1st","2nd","3rd","4th","5th")
+colnames(B)<-c("First","second")
+rownames(B)<-c("One","Two","Three","Four","Five")
+
+colnames(C)<-LETTERS(1:10)
+rownames(C)<-c("Top","Bottom")
+```
+
+When matrix is transposed, we should be careful that row name and column name is conversed. 
+```{r}
+t(A) # A:5*2 C:2*5
+A %*% C
+```
+
+
+## 5.4 Array
+Array is multidimentional vector. Array's components need to have same type. [] can be used to access specific component,like Vector. In[], the first item is row number, second is column number etc. 
+
+The difference between matrix and array is that array can be used for non-limited dimension, while matrix is limited to second dimension.
+
+```{r}
+theArray<-array(1:12,dim=c(2,3,2))
+theArray
+```
+
+```{r}
+theArray[1,,]
+theArray[1,,1]
+theArray[,,1]
+```
+
+
+---------------------------------
+# Chapter6: Loading data
+
+## 6.1. Loading CSV file
+CSV file can be easily loaded using read.table function. 
+- read.table(): if CSV is loaded as data.frame. 
+ - file: the file to be loaded
+ - header: Yes, if first row is column name
+ - sep: Mark to split data (",")
+ - stringAsFactors: FALSE to prevent make character column into factor column (character column is easier to deal as data)
+ 
+* stringAsFactors is used also for data.frame.
+
+```{r}
+theURL<-"http://www.jaredlander.com/data/Tomato%20First.csv"
+tomato<-read.table(file=theURL,head=TRUE,sep=",")
+head(tomato)
+```
+
+When we proces theDF data, the theDF$Sport is easier to analyze. There are multiple arguments available for read.table () function.
+- quote: used when data is labled with ""
+- colClasses:set each column's data class/type
+
+```{r}
+x<-10:1
+y<--4:5
+q<-c("Hockey","Football","Baseball","Curling","Rugby","Lacrosse","Basketball","Tennis","Cricket","Soccer")
+theDF<-data.frame(First=x,Second=y,Sport=q,stringAsFactors=FALSE)
+theDF$Sport
+```
+
+In case where CSV file uses ,(???ؕ???) in each data.
+- read.csv2(or read.delim2)
+
+## 6.2. Loading Excel data
+The easiest way to load excel file is to transform excel to CSV file. Even though there are packages such as gdata, XLConnect, xlsReadWrite, these packages require JAVA/Perl.
+
+## 6.3. Loading from Database
+Most database provides ODBC connectin, for instance, Mocrosoft SQL server, DB2, MySQL, Miscrosoft Access. Thus, R allows ODBC by RODBC package. 
+
+(1) Construct DSN: 
+DSN is constructed as sentence for odbcConnect ().
+- argument uid
+- password
+(2) 
+
+```{r}
+install.packages("RODBC")
+require(RODBC)
+db<-odbcConnect("QV Training")
+```
+
+By the above command, we are read to run query on database. sqlQuery () function is used, and very usefl for any complet SQL query. sqlQuery provides data.frame, and has a stringAsFactors as its argument. 
+```{r}
+# simple select
+ordersTable<-sqlQuery(db,"SELECT*FROM Orders",
+                      stringsAsFactors=FALSE)
+detailsTable<-sqlQuery(db, "SELECT*FROM[Order Details",
+                      stringsAsFactors=FALSE)
+# join two tables
+longQuery<-"SELECT * FROM Orders, [Order Details]
+WHERE Orders.ORderID = [Order Details].OrderID"
+detailsJoin<-sqlQuery(db, longQuery, stringsAsFactors=FALSE)
+
+head(ordersTable)
+head(detailsTable)
+heead(detailsJoin)
+```
+
+## 6.5 R Binary File
+RData file is useful to transfer data to another R programmer. RData file is a binary file as a object or multiple pbjects, and can be transfered through Windows, Mac, Linux.
+
+```{r}
+# save tomato data.frame
+save(tomato,file="C:/Users/kojikm.mizumura/Desktop/Data Science/?݂??Ȃ?R/tomato.rdata")
+rm(tomato)
+head(tomato)
+load("C:/Users/kojikm.mizumura/Desktop/Data Science/?݂??Ȃ?R/tomato.rdata")
+head(tomato)
+
+n<-20
+r<-1:10
+save(n,r,w,file="C:/Users/kojikm.mizumura/Desktop/Data Science/?݂??Ȃ?R/3. Dataset/multiple.rdata")
+rm(n,r,w)
+load("C:/Users/kojikm.mizumura/Desktop/Data Science/?݂??Ȃ?R/3. Dataset/multiple.rdata")
+```
+
+## 6.6 Default Packages
+To check available default datasets in each package, data() function is useful.
+  
+```{r}
+data()
+```
+
+##6.7 Webscraping
+
+readHTMLTable () function:
+- which: pick which table in case there are multiple tables
+- Header: No, in case there no header in table
+- stringAsFactors: FALSE not to make character column into factor
+
+```{r}
+install.packages("XML")
+require(XML)
+theURL1<-"https://www.jaredlander.com/2012/02/another-kind-of-super-bowl-pool/"
+bowlPool<-readHTMLTable(theURL1, which=1, header=FALSE,
+                        stringsAsFactors=FALSE)
+bowlPool
+```
+
+---------------------------------
+# Chap7: Statistical Graph
+## 7.1 Basic graphics
+
+### 7.1.1. Histogram
+Basic graph for one variable is histogram. 
+- diamonds dataset: distribution by Carat
+```{r}
+require(ggplot2)
+data(diamonds)
+head(diamonds)
+```
+
+```{r}
+hist(diamonds$carat, main="Carat Histgram",xlab="Carat")
+```
+
+
+### 7.1.2 Scatterplot
+Scatterplot is useful to plot two variables 
+- diamonds dataset: 
+```{r}
+plot(price~carat, data=diamonds)
+plot(diamonds$carat, diamonds$price)
+```
+
+### 7.1.3 Boxplot
+The Box plot shows 1st and 3rd quartile (50% range from center is ciculated)
+```{r}
+boxplot(diamonds$carat)
+```
+
+## 7.2 ggplot2
+###7.2.1 Histgraom Density chart by ggplot
+ggplot has a complex syntax (structure), but allows user to dipict by size,shape, color etc. 
+
+```{r}
+install.packages("ggplot2")
+require(ggplot2)
+ggplot(data=diamonds)+geom_histogram(aes(x=carat))
+```
+
+```{r}
+ggplot(data=diamonds)+geom_density(aes(x=carat), fill="grey50")
+```
+
+### 7.2.2. Scatterplot by ggplot
+```{r}
+ggplot(diamonds, aes(x=carat,y=price))+geom_point()
+g<-ggplot(diamonds,aes(x=carat,y=price))
+g+geom_point(aes(color=color))
+g+geom_point(aes(color=color))+facet_wrap(~color)
+g+geom_point(aes(color=color))+facet_grid(cut~clarity)
+```
+
+### 7.2.3 Boxplot / Violin-plot by ggplot
+Violin plot is simiar to boxplot, but provides more information than boxplot. By using violin plot, we can depict multiple layers (geoms) at the same chart.
+```{r}
+ggplot(diamonds, aes(y=carat, x=1))+geom_boxplot()
+ggplot(diamonds, aes(y=carat,x=cut))+geom_boxplot()
+
+ggplot(diamonds, aes(y=carat,x=cut))+geom_violin()
+ggplot(diamonds,aes(y=carat,x=cut))+geom_point()+geom_violin()
+ggplot(diamonds,aes(y=carat,x=cut))+geom_point()+geom_point()
+```
+
+### 7.2.4 Line by ggplot
+
+ggplot2 depicts economics pop line by identifying date data.
+However, there are cases we need to input aes(group=1) for geom_line(). 
+
+```{r}
+head(economics)
+ggplot(economics,aes(x=date,y=pop))+geom_line()
+```
+
+---------------------------------------
+# Chap8: Write R Function
+
+## 8.1 Hello World
+simple function to show "Hello, World".
+- perod (.) does not have a special meaning
+- Similar other arguments, "<-" assigns function to object same as variabile
+```{r}
+say.hello<-function()
+{
+  print("Hello, World!")
+}
+```
+
+## 8.2 Argument of function
+sprintf () function 
+- first argument:special input word
+- second argument:next word
+```{r}
+sprintf("Hello %s", "Jared") # one word
+sprintf("Hello %s, today is %s", "Jared","Sunday") # two words
+
+hello.person<-function(name)
+{
+  print(sprintf("Hello %s",name))
+}
+hello.person("Jared")
+hello.person("Bob")
+hello.person("Sarah")
+```
+
+Argument can be used as a variable in function, and can be treated same as other variables and argument to further call for another function inside the function.
+```{r}
+hello.person<-function(first,last)
+{
+  print(sprintf("Hello %s %s",first, last))
+}
+
+# set by position
+hello.person("Jared","LAnder")
+# set by name
+hello.person(first="Jared",last="Lander")
+# set by name in oppostite
+hello.person(last="Lander", first="Jared")
+# set by one name
+hello.person("Jared",last="Lander")
+hello.person(first="Jared","Lander")
+hello.person(last="Lander","Jared")
+```
+
+### 8.2.1 Default argument
+R has a default setting for multiple arguments (no need to set argument individually). 
+
+```{r}
+hello.person<-function(first,last="Doe")
+{
+  print(sprintf("Hello %s %s", first, last))
+}
+hello.person("Jared") #not set last name
+hello.person("Jared","Lander") #set different last name
+```
+
+
+### 8.2.2 Additional argument 
+R has a special operator ("???Z?q", "..."") allow function to take arguments not needed for defining function.
+```{r}
+# Additional argument
+hello.person("Jared",extra="Goodbye") #error
+
+# two effective arguments, extract third argument
+hello.person("Jared","Lander","Goodbye")
+
+hello.person<-function(first,last="Doe",...)
+{
+  print(sprintf("Hello %s %s",first,last))
+}
+hello.person("Jared",extra="Goodbye")
+hello.person("Jared","Lander","Goodbye")
+```
+
+## 8.3 Return value
+Function is generally used to calculate some values, and needs mechanism to retrun calculation results back to function.
+
+There are two methods for R
+- (1) return last row value automatically
+- (2) use return command to select which value to be returned/which function to be closed (finished)
+
+```{r}
+# make function without specific definition
+double.num<-function(x)
+{ x*2}
+double.num(5)
+
+# define return mechanism
+double.num<-function(x)
+{return(x*2)}
+double.num(5)
+
+# additional argument of 17 after return x* value / x*2 function is already over, and the code was not conducted
+double.num<-function(x)
+{return(x*2)
+  print("Hello!")
+  return(17)}
+double.num(5)
+```
+
+## 8.4 do.call
+do.call () function is used to set name of function (not frequently used).List is used to set arguments.
+
+```{r}
+do.call("hello.person",args=list(first="Jared",last="Lander"))
+do.call(hello.person,args=list(first="Jared",last="Lander"))
+
+run.this<-function(x,func=mean)
+{
+  do.call(func,args=list(x))
+}
+run.this(1:10,mean) #set average
+run.this(1:10,sum) #set sum
+run.this(1:10,sd) #set sd
+```
+
+
+---------------------------------------
+# Chapter9: Control Sentence
+Control sentence controls program and allows different codes based on test result (e.g., logic, TRUE, FALSE). Main control sentences are as follows.
+- if
+- else
+- ifelse
+- switch
+
+## 9.1 if and else
+```{r}
+as.numeric(TRUE)
+as.numeric(FALSE)
+
+1==1
+1<1
+1>=1
+1!=1
+
+# if sentence to control this test
+toCheck<-2
+if(toCheck==1)
+{
+  print("hello")
+}
+
+```
+
+
+if sentence is close to function in terms that all sentences are within (). We define else sentence in case the the situation is FALSE circumustance. 
+- TRUE: works as 1 (TRUE)
+```{r}
+check.bool<-function(x)
+{
+  if(x==1)
+  {
+    print("hello") # if x=1, "Hello"
+  } else
+  {
+    print("goodbye") #otherwise "goodbye"
+  }
+}
+check.bool(1)
+check.bool("k")
+check.bool(TRUE)
+```
+
+In case of testing multiple options, we use else if () respectvely. 
+```{r}
+check.bool<-function(x)
+{
+  if(x==1)
+  {
+    print("Hello")
+  }else if (x==0)
+  {
+    print("Confused")
+  }else
+  {
+    print("Unknown")
+  }
+}
+check.bool(1)
+check.bool(0)
+check.bool("k")
+```
+
+## 9.2 Switch 
+When we test multiple options , switch would be more useful than else if 
+- first argument: values to be tested
+- second argument: option values, results
+```{r}
+use.switch<-function(x)
+{
+  switch(x,
+         "a"="first",
+         "b"="second",
+         "z"="last",
+         "c"="third",
+         "other")
+}
+use.switch("a")
+use.switch("e")
+```
+
+When the first argument is numerical, order of the first argument is used instead of name of the first argument. 
+```{r}
+use.switch(1)
+use.switch(4)
+```
+
+## 9.3. ifelse
+ifelse is close to if function in excel.
+- first: condition to be tested
+- second: returned value when the test is TRUE
+- third: returned value whenthe test is FALSE
+```{r}
+# test whether 1=1
+ifelse(1==1, "Yes","No")
+ifelse(1==0, "Yes","No")
+toTest<-c(1,1,0,1,0,1)
+ifelse(toTest==1, "Yes","No")
+
+# we can access element of first argument (test value)
+ifelse(toTest==1, toTest*3, toTest)
+ifelse(toTest==1, toTest*3, "Zero")
+
+# NA value
+toTest[2]<-NA
+toTest
+ifelse(toTest==1, "Yes","No")
+ifelse(toTest==1, toTest*3, toTest)
+ifelse(toTest==1, toTest*3, toTest)
+ifelse(toTest==1, toTest*3, "ZERO")
+```
+
+## 9.4 Multiple tests
+
+When testing multiple conditions, double expressin (e.g.,&&, ||) are used in the same if sentence.The expression "and" (multiply) is priotized against "or" (add).
+
+```{r}
+a<-c(1,1,0,1)
+b<-c(2,1,0,1)
+# check condtion a and b respectively
+ifelse(a==1 & b==1, "Yes", "No")
+# check condition a and b as one condition
+ifelse(a==1 && b==1, "Yes", "No")
+```
+
+-----------------------
+# Chapter10: Loop
+R beginners often use vector, list, data.frame with loop functions. It is desirable to use vecotrized coding, but the below outlines for loop, while loop functions.
+
+## 10.1 For Loop
+
+For loop function is most frequently used. 
+- for loop: iterate process for index (vector)
+
+```{r}
+for (i in 1:10)
+{print(i)}
+
+# print () function (vectorized) works for the same results 
+print(1:10)
+```
+
+For loop function works for any value/inputs.
+```{r}
+# vector listing fruit name
+fruit<-c("apple","banana","pomegranate")
+fruitLength<-rep(NA,length(fruit))
+fruitLength
+# [1] NA NA NA
+
+names(fruitLength)<-fruit
+fruitLength
+
+for(x in fruit)
+{fruitLength[x] <-nchar(x)}
+fruitLength
+```
+
+The above can be accomplished by a vectorized function in R. 
+```{r}
+fruitLength2<-nchar(fruit)
+names(fruitLength2)<-fruit
+fruitLength2
+identical(fruitLength,fruitLength2)
+```
+
+## 10.2 While Loop
+It is easy to implement While Loop as well as For Loop, as the While Loop iterates the parenthis until condition is TRUE/satisfied.
+```{r}
+x<-1
+while(x<=5)
+{
+  print(x)
+  x<-x+1
+}
+```
+
+## 10.3 Loop control
+Next/Break are used in R to control iteration process of loop.
+```{r}
+## 3 is not generated as output
+for (i in 1:10)
+{
+  if (i==3)
+  {
+    next
+  }
+    print(i)
+}
+```
+
+The process is stopped at 3 by settung break argument 
+```{r}
+for (i in 1:10)
+{
+  if (i==4)
+  {
+    break
+  }
+  print(i)
+}
+```
+
+------------------------
+# Chapter11: Grouping control
+We must spend most time to process data, and there are multiple useful functions as follows. 
+
+## 11.1 Apply family
+- tapply 
+- lapply 
+- sapply 
+- mapply 
+
+### 11.1.1 Apply
+The most limited function which can be applied to matrix only with categorical/numeric/logic. 
+* If apply function is applied to data.frame, it is converted to matrix. 
+
+- first argument: data object
+- second argument: margin to be applied to function (1: row, 2: column, 3: function, 4: additional conditions to function operation). 
+
+The apply function iterates processing each row (column) by applying its function to it as independent input.
+
+```{r}
+theMatrix<-matrix(1:9, nrow=3)
+
+# apply to sum by row 
+apply(theMatrix, 1, sum)
+# apply to sum by column 
+apply(theMatrix, 2, sum)
+
+# the above calculation can be simplified by using rowSums, colSums functions. 
+rowSums(theMatrix)
+colSums(theMatrix)
+```
+
+We check NA values (#?????l) in apply function.
+
+```{r}
+theMatrix[2,1]<-NA
+apply(theMatrix,1,sum)
+apply(theMatrix,1,sum,na.rm=TRUE)
+rowSums(theMatrix)
+rowSums(theMatrix, na.rm=TRUE)
+```
+
+## 11.1.2 lapply/sapply
+
+- lapply: apply function to each element of list, and return the results as list.
+```{r}
+theList<-list(A=matrix(1:9,3),B=1:5,C=matrix(1:4,2),D=2)
+lapply(theList, sum)
+```
+
+- sapply: returns lapply results by vector (this is identical to sapply except for output type).
+```{r}
+sapply(theList, sum)
+
+theNames<-c("Jared","Deb","Paul")
+lapply(theNames, nchar)
+```
+
+### 11.1.3 mapply
+- mapply: apply selected function to each element of multiple lists (unfortunately, we might try to use loop function, being unware of mapply).
+```{r}
+# prepare two lists
+FirstList<-list(A=matrix(1:16,4), B=matrix(1:16,2),C=1:5)
+SecondList<-list(A=matrix(1:16,4),B=matrix(1:16,8),C=15:1)
+
+# check whether element matches  between both lists
+mapply(identical, FirstList, SecondList)
+
+# define function
+simpleFunc<-function(x,y)
+{NROW(x)+NROW(y)}
+
+#apply function
+mapply(simpleFunc, FirstList, SecondList)
+
+```
+
+### 11.1.4 Other apply function
+There are other functions (eg, tapply,rapply,eapply,vapply,by), but replaced by plyr package.
+
+## 11.2 Aggregate
+Aggregate function is used fro grouping operation etc.
+- dataset:diamonds (ggplot library)
+
+Example as below
+- First argument: 
+- Second argument: data
+- Third argument: function to be applied
+```{r}
+require(ggplot2)
+data(diamonds)
+head(diamonds)
+aggregate(price~cut, diamonds, mean)
+```
+
+In the first argument, we set price to be aggregated by cut. The data is given as second argument, thus onl column names are input as the first argument.
+
+When we group a data by multiple variabiles, symbol "+" is added. However, we need to bind variables by cbind() function, when we want to group two variables.
+```{r}
+aggregate(price~cut+color,diamonds,mean)
+aggregate(cbind(price, carat)~cut, diamonds,mean)
+```
+
+The above function gives us mean value for price and carat by cut category. When we apply multiple functions, plyr package is preferable. 
+
+```{r}
+aggregate(cbind(price,carat)~cut+color,diamonds,mean)
+```
+
+## 11.3 plyr
+The core functions of plyr package are ddply, llply and ldply.
+- First letter:input data class
+- Second letter: output data class
+
+ddply(data-data.frame), llply(data-list), ldply(input-list,output-data.frame)
+
+Function | input | output
+:---------|:---------:|---------:
+ddply|data.frame|data.frame
+llapply|list|list
+aapply|array/vector/matrix|array/vector/matrix
+dlply||data.frame|list
+
+### 11.3.1 ddply
+- dataset:baseball (plyr package)
+```{r}
+require(plyr)
+head(baseball)
+```
+
+The statistics OBP (On Base Percentage) is caculaged as OBP = (H+BB+HBP) / (AB+BB+HBP+SF)
+- H: Hit
+- BB: Four Ball
+- HBP: Dead ball
+- AB: At Bat (Dasuu)
+- SF: Sacrifice fly (Gisei Fly)
+
+```{r}
+
+# Transforms NA in sf to 0
+baseball$sf[baseball$year<1954]<-0
+any(is.na(baseball$sf))
+
+# Transforms NA in HBP to 0
+baseball$hbp[is.na(baseball$hbp)]<-0
+any(is.na(baseball$hbp))
+
+# Picks palyers with more tha 50 ABs
+baseball<-baseball[baseball$ab>=50,]
+
+# Calculate OBP (On Base Percentage)
+baseball$OBP<-with(baseball,(h+bb+hbp)/(ab+bb+hbp+sf))
+tail(baseball)
+```
+
+The with() function is used to refer specific columns within data.frame. However, when we calculate lifetime OBP for each player, we need to sum numerator/denominator figures first.
+
+We define function and use ddply for calculating lifetime OBP per player. 
+
+```{r}
+# We assume that the below column names are defined in dataset.
+obp<-function(data)
+{c(OBP=with(data,sum(h+bb+hbp)/sum(ab+bb+hbp+sf)))}
+
+# apply ddply to calculate lifetime OBP per player
+careerOBP<-ddply(baseball, .variables="id",.fun=obp)
+
+#Change order by Lifetime OBP ratio
+careerOBP<-careerOBP[order(careerOBP$OBP,decreasing=TRUE),]
+head(careerOBP,10)
+```
+
+### 11.3.2 llply
+
+We can use llply to calculate sum of elements in each list.
+```{r}
+theList<-list(A=matrix(1:9,3), B=1:5,C=matrix(1:4,2),D=2)
+laply(theList, sum)
+
+llply(theList, sum)
+identical(lapply(theList,sum),llply(theList,sum))
+```
+
+laply() function can be used to return results by vector, as well as sapply() function.
+```{r}
+sapply(theList, sum)
+laply(theList,sum)
+```
+
+### 11.3.3 Plyr helper function
+Plyr has multiple help functions such as each() function for aggregate() function.
+```{r}
+require(ggplot2)
+aggregate(price ~ cut, diamonds,each(mean,median))
+```
+
+The other useful function is idata.frame() function. This function refers data frame for rapid operation.
+```{r}
+system.time(dlply(baseball,"id",nrow))
+iBaseball<-idata.frame(baseball)
+system.time(dlply(iBaseball,"id",nrow))
+```
+
+Sometimes, plyr is criticized fro its slow operation. 
+
+## 11.4 Data.table
+For speedy operation, data.table  package is used by expanding data.frame functionality.The syntax is different from regular data.frame.Data.table enables us to access/grouping/combine(JOIN) data rapidly.  
+```{r}
+install.packages("data.table")
+require(data.table)
+theDF<-data.frame(A=1:10,
+                  B=letters[1:10],
+                  C=LETTERS[11:20],
+                  D=rep(c("One","Two","Three"), length.out=10))
+theDT<-data.table(A=1:10,
+                  B=letters[1:10],
+                  C=LETTERS[11:20],
+                  D=rep(c("One","Two","Three"), length.out=10))
+
+theDF
+theDT
+
+# Default: data.frame(factor), data.table(character)
+class(theDF$B)
+class(theDT$B)
+```
+
+The data in data.frame and data.table is identical except for the different data class. Data table can be generated from existing data.frame.
+```{r}
+diamondsDT<-data.table(diamonds)
+diamondsDT
+
+theDT[1:2,]
+theDT[theDT$A>=7,]
+```
+
+In section 5.1, multiple columns are set as vector of character for data.frame. As for data.table, columns are selected as column name.
+```{r}
+theDT[,list(A,C)]
+
+# One column
+theDT[,B]
+
+# On column keeping data.table structure
+theDT[,list(B)]
+
+# in case we set column name without list, we put with argument as FALSE.
+theDT[,"B",with=FALSE]
+theDT[,c("A","C"),with=FALSE]
+```
+
+### 11.4.1 Key
+data.table are stoted on memory, and can be checked by data.table () function.
+
+```{r}
+# Show table
+tables()
+```
+
+We input key for theDT table, by putting data.table. 
+- setkey(): key setting
+ - first: data.table to be used
+ - second: column to be used
+
+```{r}
+# set key
+setkey(theDT,D)
+theDT
+
+key(theDT)
+tables()
+```
+
+By setting key function, we can utilize new approach to select rows from data.table. In addition to row number, TRU/FALSE, we can utlize column values set as key.
+```{r}
+theDT["One",]
+theDT[c("One","Two"),]
+```
+
+Multiple columns are set as key. There is a specific functiona named J(), and we input multiple arguments.
+- J()
+```{r}
+setkey(diamondsDT,cut,color)
+
+# try order change
+diamondsDT<-diamondsDT[order(diamondsDT$color,decreasing=TRUE),]
+
+# J function to select multiple columns with keys
+diamondsDT[J("Ideal","E")]
+```
+
+### 11.4.2 data.table aggregation
+```{r}
+aggregate(price~cut, diamonds,mean)
+diamondsDT[,mean(price),by=cut]
+diamondsDT[,list(price=mean(price)),by=cut]
+
+# columns are set by list when we aggregate multiple columns
+diamondsDT[,mean(price),by=list(cut,color)]
+
+# aggreation of multiple arguments
+diamondsDT[,list(price=mean(price),carat=mean(carat),by=cut)]
+
+diamondsDT[,list(price=mean(price),carat=mean(carat),
+                 caratSum=sum(carat)),by=cut]
+```
+
+Lastly, we set multiple agrregation / multiple grouping variables simultaneously.
+```{r}
+diamondsDT[,list(price=mean(price),carat=mean(carat)),
+           by=list(cut,color)]
+```
+
+
+----------------------------------------------------
+
+# Chapter 12: Data processing 
+Data processing/cleaning to change the structure of data (row-based, column-based), or generate dataset from multiple data sources. 
+- plyr
+- reshape2
+- data.table 
+
+## 12.1 cbind and r bind
+
+We would combine two vectors in data.frame format by cbind function, and accumulate data on row-base by rbind function. 
+- cbind()
+- rbind()
+```{r}
+# create two vectors and combine both by data.frame
+
+#trophies1
+sport<-c("Hockey","Baseball","Football")
+league<-c("NHL","MLB","NFL")
+trophy<-c("Stanley Cup","Commissioners Trophy", "Vince Lombardi Trophy")
+trophies1<-cbind(sport,league,trophy)
+
+trophies2<-data.frame(sport=c("Bascketball","Golf"), league=c("NBA","PGA"),trophy=c("Larry OBrien Championship Trophy", "Wanamaker Trophy"),stringsAsFactors = TRUE)
+
+# combine both vectors (data.frame) by rbind() function.
+
+trophies1
+trophies2
+trophies<-rbind(trophies1,trophies2)
+```
+
+
+multiple arguments are set to combine any number of objects together with cbind(), rbind() functions. 
+- cbind(): we can change name of column of vectors in the argument.
+```{r}
+cbind(Sport=sport, Association=league, Prize=trophy)
+```
+
+
+## 12.2 Join 
+
+Data is not ordered for simply combining by cbind() function. Thus, we need to comnine data by using key.
+
+The most common data comine functions are
+- merge(baseR package)
+- join (plyr package)
+- merge function of data.table
+
+The exampke: csv files from USAID Open Government Initiative
+
+```{r}
+download.file(url="http://jaredlander.com/data/US_Foreign_Aid.zip",destfile="C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?݂??Ȃ?R/ForeignAid.zip")
+unzip("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?݂??Ȃ?R/ForeignAid.zip", exdir="data")
+```
+
+To load all csv files, we use for loop() function. We obtain list of files by dir function. We assign name to each data by assign() function.
+- for loop():
+- dir():
+
+```{r}
+library(stringr)
+# obtain list of files
+theFiles<-dir("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?݂??Ȃ?R/data", pattern="\\.csv")
+# apply loop processing for these files
+for (a in theFiles)
+{
+  #create name to be assigned to data
+  nameToUse<-str_sub(string=a,start=12,end=18)
+  # read.table() to load csv file
+  # file.path() is for generating file path setting file and folder name
+  temp<-read.table(file=file.path("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?݂??Ȃ?R/data",a),header=TRUE,sep=",",stringsAsFactors = FALSE)
+  #R workspace gets variables (R??workspace?ɕϐ??����蓖?Ă?)
+  assign(x=nameToUse,value=temp)  }
+```
+
+### 12.2.1 Merge
+Merge() function is used to combine two data.frame.
+- by.x argument:set key for the left data.frame 
+- by.y argument:set key for the right data.frame
+
+However, merge() function is very slow compared with other similar functions.
+
+```{r}
+Aid90s00s<-merge(x=Aid_90s,y=Aid_00s,
+                 by.x=c("Country.Name","Program.Name"),
+                 by.y=c("Country.Name","Program.Name"))
+head(Aid90s00s)
+```
+
+### 12.2.2 plyr join by Hadley Wickam
+
+join() function (plyr package) works same as merge() function. However, one disadvantage is thatr key for each table needs to be indentical for combination.
+
+```{r}
+require(plyr)
+Aid90s00sJoin<-join(x=Aid_90s,y=Aid_00s,by=c("Country.Name","Program.Name"))
+head(Aid90s00sJoin)
+```
+
+Join() function sets types of Join, combination as arguments.
+
+Currently, we have eight data.frame, and examine how to comine them toone data.frame. The quickest way is to store all data.frames as list, and combine element of the list by Reduce() function.
+```{r}
+
+# first figure out names of the data.frames
+frameNames<-str_sub(string=theFiles,start=12,end=18)
+# build an empty list
+frameList<-vector("list",length(frameNames))
+names(frameList)<-frameNames
+
+# add each data.frame into the list
+for (a in frameNames)
+{
+  frameList[[a]]<-eval(parse(text=a))
+}
+
+head(frameList[[1]])
+head(frameList[["Aid_00s"]])
+head(frameList[[5]])
+```
+
+- str.sub(): generate data.frame name (stringr package)
+- parse
+- evaluation
+
+By storing all data.frames in the list, we can iterates process to the list, which enables to combine all elements at the sametime. 
+```{r}
+allAid<-Reduce(function(...)
+{
+  join(...,by=c("Country.Name","Program.Name"))},frameList)
+dim(allAid)
+
+require(useful)
+corner(allAid, c=15)
+bottomleft(allAid,c=15)
+```
+
+Reduce() function illustates the below  example: 
+- we wants to merge a vector consisting of 1:10. We can use reduce() function such as Reduce (sum,1:10)
+- In the above code, we used reduce to make two data frames as list and join. The result is combined as data.frame.
+
+### 12.2.3 data.table merge
+
+we transform data.frame to data.table, and 
+can apply join() function, as we have set keys for data.table.
+
+```{r}
+require(data.table)
+dt90<-data.table(Aid_90s,key=c("Country.Name","Program.Name"))
+dt00<-data.table(Aid_00s,key=c("Country.Name","Program.Name"))
+
+dt0090<-dt90[dt00]
+```
+
+## 12.3 reshape2
+Data melt (transforms data from column-based to row-based), and data cast (opposite transformation) is common data processing. 
+- reshaping2 package
+
+### 12.3.1 melt
+
+In the Aid_00s data.frame, each year's date is stored on diferent columns (cross table format).
+
+As this cross-table format is not desirable for data analytics algorithm, we need to process data so that each row has country-program-yearly amount.
+- melt() function: reshape2 package
+ - id.vars argument: set ID (identified variable)
+```{r}
+head(Aid_00s)
+
+require(reshape2)
+melt00<-melt(Aid_00s,id.vars=c("Country.Name","Program.Name"),variable.name="Year",value.name="Dollars")
+tail(melt00,10)
+
+```
+
+Year column is altered/aggreagated, and time dependency of each support program's accumulation can be illustrated easily.
+
+```{r}
+require(scales)
+
+# Take out FY from Year column and channge it to numeric
+melt00$Year<-as.numeric(str_sub(melt00$Year,start=3,end=6))
+
+# aggreation process for calculating each support program's amount on yearly basis
+meltAgg<-aggregate(Dollars~Program.Name+Year, data=melt00,sum,na.rm=TRUE)
+head(meltAgg)
+
+# take first 10 letters for each support program
+meltAgg$Program.Name<-str_sub(meltAgg$Program.Name,start=1,end=10)
+
+ggplot(meltAgg, aes(x=Year, y=Dollars))+
+  geom_line(aes(group=Program.Name))+
+  facet_wrap(~Program.Name)+
+  scale_x_continuous(breaks=seq(from=2000,to=2009,by=2))+
+  theme(axis.text.x =element_text(angle=90,vjust=1,hjust=0))+
+  scale_y_continuous(labels=multiple_format(extra=dollar,multiple="B"))
+```
+
+### 12.3.2 dcast
+we can transform melted data (i.e., foreign country support data) into column-based data. 
+- dcast(): tricky argument
+  - first argument: data (i.e.,melt00)
+  - second argument: formula (left: columns to be kept, right: columns to be changed to rows)
+  - third argument: columnts to be changed to new column
+
+```{r}
+cast00<-dcast(melt00,Country.Name+Program.Name~Year,value.var="Dollars")
+head(cast00)
+```
+
+
+----------------------------------------
+# Chapter 13: Manipulating strings
+?????񑀍?
+
+
+Strings is used to pre-processing of text data, data conversion etc. 
+
+
+## 13.1 Paste
+
+Paste() function is used for combining strings. This function takes multiple strings/formula with strings as arguments, and merge them into a string. 
+```{r}
+paste("Hello","Jared","and Others")
+```
+
+Space is inserted between strings, as the paste() function has sep as its third argument.
+```{r}
+paste("Hello","Jared","and Others", sep="/")
+```
+
+The paste() function is also vectorized.
+```{r}
+paste(c("Hello","Hey","Hody"),c("Jared","Bob","Dabid"))
+```
+
+In the above cse, each vector has same number of elements, and each element is combined as pair.Otherwise, same value is iterately combined.
+```{r}
+paste("Hello",c("Jared","Bob","David"))
+paste("Hello",c("Jared","Bob","David"),c("Goodbye","Seeya"))
+```
+
+Finally, paste() function can be used collapse text vectors into one vector with collapse argument.
+```{r}
+vectorOfText<-c("Hello","Everyone","out there","-")
+paste(vectorOfText,collapse=" ")
+paste(vectorOfText,collpase="*")
+```
+
+
+## 13.2 sprintf
+sprintf() function is useful for long sentence with symbol to set where variable is inserted. 
+```{r}
+sprintf("Hello %s, your party of %s will be seated in %s minutes",c("Jared","Bob"),c("eight",16,"four",10),c(25))
+```
+
+
+
+
+## 13.3 Extract text
+We extract list of US president from Wikipedia. 
+- XML package
+```{r}
+install.packages("XML")
+require(XML)
+
+load("C:/Users/kojikm.mizumura/Desktop/Data Science/2. ?݂??Ȃ?R/3. Dataset/predidents.rdata")
+theURL<-"http://www.loc.gov/rr/print/list/057_chron.html"
+presidents<-readHTMLTable(theURL, which=3, as.data.frame=TRUE,skip.rows=1,header=TRUE,stringsAsFactors=FALSE)
+
+presidents
+tail(presidents,20)
+head(presidents)
+tail(presidents$YEAR)
+presidents<-presidents[1:64,]
+```
+
+We fist generate two columns listing start and end president period. For this, we need to devide YEAR column by -. 
+
+stringr packag has str_splot() function, and this enables us to splot strings by specific value/word.
+```{r}
+require(stringr)
+
+# divide strings
+yearList<-str_split(string=presidents$YEAR,pattern="-")
+head(yearList)
+
+# combine results into a matrix
+yearMatrix<-data.frame(Reduce(rbind,yearList))
+head(yearMatrix)
+
+# names for each column
+names(yearMatrix)<-c("Start","Stop")
+
+# combine these columns to the presidents data.frame
+presidents<-cbind(presidents,yearMatrix)
+
+# change start/stop columns as numeric
+presidents$Start<-as.numeric(as.character(presidents$Start))
+presidents$stop<-as.numeric(as.character(presidents$Stop))
+
+# check the addition of columns
+head(presidents)
+tail(presidents)
+```
+
+In the above example, we needed to change class of presidents Start to numeric after changing it to character first.
+
+str_sub() function is used to select specific character from text.
+```{r}
+
+# First three letters
+str_sub(string=presidents$PRESIDENT,start=1,end=3)
+
+# fourth and eigth letters
+str_sub(string=presidents$PRESIDENT,start=4,end=8)
+
+```
+
+The str_sub() function is useful for finding president with stop period ending from 1. 
+```{r}
+presidents[str_sub(string=presidents$Start, start=4, end=4)==1,c("YEAR","PRESIDENT","Start","Stop")]
+```
+
+## 13.4 Regular expression (???K?\??)
+When analyzing text data, we need to find pattern in text data. Regular expression is very useful, and the blow ilustrates example to detect president with John by str_detect()
+- str_detect
+* str_sub cannnot be used
+
+```{r}
+# TRUE/FALSE about whether President's Name includes John
+johnPos<-str_detect(string=presidents$PRESIDENT,pattern="John")
+presidents[johnPos,c("YEAR","PRESIDENT","Start","Stop")]
+```
+
+Regular expression distingushes small/large capitl, and ignore.case() needs to be set if we want to ignore capitalized letter.
+
+```{r}
+badSearch<-str_detect(presidents$PRESIDENT,"john")
+goodSearch<-str_detect(presidents$PRESIDENT,ignore.case("John"))
+sum(badSearch)
+sum(goodSearch)
+```
+
+To demonstrate the regular expression, we would us US war list. Loading rdata file from URL is not straightfoward compared with csv file.
+- url(): connect with data source
+- load(): load such connection
+- close(): close the connection again
+
+```{r}
+
+con<-url("http://www.jaredlander.com/data/warTimes.rdata")
+load(con)
+close(con)
+```
+
+The vector has begin/end date of war, and data is varied (e.g., with/without months,date). Thus, this dataset is good to check text processing function.  
+```{r}
+head(warTimes)
+```
+
+Suppose we want to make a new column regarding war begging period. For making the column, we need divide the string. The ACAETA is used in Wikipedia encoding.In addition, uncommon expression using "-" are seen as well.
+```{r}
+warTimes[str_detect(string=warTimes,pattern = "-")]
+```
+
+Thus, when we devide string, we need to find "ACAEA" or "-". str_split() function can pass regular expression to pattern argument. 
+```{r}
+# "ACAEA|-": ACAEA or -
+# (): ignored (otherwise \ needs to be inseted before ())
+# n=2: at most two values (eg, mid-July)
+
+theTimes<-str_split(string=warTimes, pattern="(ACAEA)|-",n=2)
+head(theTimes)
+```
+
+This codes functions well for the first few strings, and we would check two cases with "-".
+```{r}
+which(str_detect(string=warTimes,pattern="-"))
+theTimes[147]
+theTimes[150]
+```
+
+We are intersted in war begin period, thus we need to extract first element from each vector in the list.
+- sapply()
+```{r}
+theStart<-sapply(theTimes,FUN=function(x) x[1])
+head(theStart)
+```
+
+The original text does/does not include space, thus some data have extra space at the end. The simplest way to exclude is str_trim() function.
+- str_trim
+```{r}
+theStart<-str_trim(theStart)
+head(theStart)
+```
+
+str_extract() function is used to extract specific word from text. In this function, unmatched result is returned as NA.
+- str_extract()
+```{r}
+# extract Jaunary if its available
+str_extract(string=theStart,pattern="January")
+```
+
+str_detect() function is used to find element including "January", and retrun whole string. 
+-str_detect()
+```{r}
+theStart[str_detect(string=theStart,pattern="January")]
+```
+
+To extract year, figures with four numbers need to be identified. In the regular epxression, [0-9] refers to any number.
+```{r}
+# pick figures with four numbers
+head(str_extract(string=theStart, "[0-9][0-9][0-9][0-9]"),20)
+```
+
+The above [0-9] expression has a shortcut ("\\d"). 
+```{r}
+# "\\d"
+head(str_extract(string=theStart,"\\d{4}"),20)
+
+# numbers interated 1-3 times
+str_extract(string=theStart,"\\d{1,3}")
+```
+
+We can search "^" in the beginning or "S" in the end, by regular expression.
+```{r}
+# extract first four numbers
+head(str_extract(string = theStart,pattern="^\\d{4}"),30)
+
+# extract last four numbers
+head(str_extract(string = theStart,pattern="\\d{4}$"),30)
+
+# extract both numbers
+head(str_extract(string=theStart,pattern="^\\d{4}$"),30)
+```
+
+The powerful feature of regular expression is replace text selectively.
+- str_replace()
+- str_replace_all()
+```{r}
+# first letter replaced to x
+head(str_replace(string=theStart,pattern="\\d",replacement="x"),30)
+
+# all letters replaced to x
+head(str_replace_all(string=theStart, pattern="\\d",replacement="x"),30)
+
+# any number from 1 logit to 4 logits replaced to x
+head(str_replace_all(string=theStart, pattern="\\d{1,4}g",replacement="x"),30)
+```
+
+The regular expression can be used to replace part of search results. We extract specifc string from HTML tag.
+- "<+?>"
+- ".+?"
+- "<.+?>"
+  - ".": one letter
+  - "+": at least one match
+  - "?": least match
+```{r}
+# create HTML tagged vector
+commands<-c("<a href=indext.html>The Link is here</a>","<b>This is bold text</b>")
+
+# Extract text from HTML tag
+# (.+?) is replaced by 1
+str_replace(string=commands,pattern="<.+?>(.+?)<.+>",replacement="\\1")
+```
+
+
+
+
+-------------------------------------------
+# Chap14: Probability Distribution (?m?????z)
+
+## 14.1 Normal Distribution
+
+The normail distribution is defined as below, and rnorm() function is used with inital setting of mean/variance.
+- rnorm()
+
+$$f(x;\mu, \sigma)=\frac{1}{\sqrt{(2\pi)}\sigma} * e^{-(x-\mu)^2/2\sigma^2}$$
+
+```{r}
+# random number generation from normal distribution
+rnorm(n=10)
+
+# mean=100, sd=20
+rnorm(n=10,mean=100,sd=20)
+```
+
+Density function of normal distribution is caclulated with dnorm() function.
+- dnorm: 
+```{r}
+randNorm10<-rnorm(10)
+randNorm10
+
+dnorm(randNorm10)
+dnorm(c(-1,0,1))
+
+# Random number generation
+randNorm<-rnorm(30000)
+randDensity<-dnorm(randNorm)
+
+require(ggplot2)
+ggplot(data.frame(x=randNorm,y=randDensity))+aes(x=x,y=y)+
+  geom_point()+labs(x="Random Normal Variables",y="Desnity")
+```
+
+The similar function is pnorm(), which returns accumulated probability
+$$
+\Phi(a)= P(X<=a)=\int_b^a\frac{1}{\sqrt{2\pi}\sigma}e^{\frac{-(x-\mu)^2}{2\sigma^2}}
+
+
+$$
+
+```{r}
+pnorm(randNorm10)
+pnorm(c(-3,0,3))
+pnorm(-1)
+```
+
+Pnorm() calculates probability taking left edge as infinity. To calculate probability between specific two values, we need to take difference. 
+```{r}
+pnorm(1)-pnorm(0)
+
+# randNorm/randDensity inserted as data.frame
+p<-ggplot(data.frame(x=randNorm,y=randDensity))+aes(x=x, y=y)+
+  geom_line()+labs(x="x",y="Density")
+
+# shadow plot is depicted
+neg1Seq<-seq(from=min(randNorm), to=-1,by=.1)
+
+# x is data.framed, and y distribution is calculated based in x
+lessThanNeg1<-data.frame(x=neg1Seq,y=dnorm(neg1Seq))
+head(lessThanNeg1,10)
+
+# connect end point (left/right)
+lessThanNeg1<-rbind(c(min(randNorm),0),
+                    lessThanNeg1,
+                    c(max(lessThanNeg1$x),0))
+
+# create shadow plot by polygon
+p+geom_polygon(data=lessThanNeg1,aes(x=x,y=y))
+
+# creat sequential values from -1 to 1
+neg1Post1Seq<-seq(from=-1,to=1,by=.1)
+
+# create sequential x by data.frame
+neg1To1<-data.frame(x=neg1Post1Seq,y=dnorm(neg1Post1Seq))
+
+head(neg1To1)
+
+# connect endpoint
+neg1To1<-rbind(c(min(neg1To1$x),0),
+               neg1To1,
+               c(max(neg1To1$y),0))
+
+p+geom_polygon(data=neg1To1,aes(x=x,y=y))
+
+randProb<-pnorm(randNorm)
+ggplot(data.frame(x=randNorm,y=randProb))+aes(x=x,y=y)+
+  geom_point()+labs(x="Random Normal Viariables",y="Probability")
+```
+
+inverse function of pnorm is qnorm, and returns accumulated probability distribution transofation points.
+```{r}
+randNorm10
+
+q<-qnorm(pnorm(randNorm10))
+all.equal(randNorm10,q)
+```
+
+## 14.2 Binomial Distribution
+
+Ninominal distribution is defined as:
+$$
+p(x;n,p)=\left(
+  \begin{array}{cc}
+n\\
+x
+\end{array}
+\right)
+p^x(1-p)^{n-x}, where 
+
+\left(
+  \begin{array}{cc}
+n\\
+x
+\end{array}
+\right)=\frac{n!}{x!(n-x)!}
+
+$$
+
+```{r}
+
+rbinom(n=1,size=10,prob=0.4)
+
+# success rate 0.4, action 10 
+rbinom(n=1, size=10,prob=0.4)
+rbinom(n=5,size=10,prob=0.4)
+rbinom(n=10,size=10,prob=0.4)
+
+# when we set size=1, it becomes bernoulli trial
+rbinom(n=1, size=1, prob=0.4)
+rbinom(n=5, size=1, prob=0.4)
+rbinom(n=10, size=1, prob=0.4)
+```
+
+We visualize binomial ditribution (success rate:0.3, trial 10, 10,000 iteration)
+```{r}
+binomData<-data.frame(Success=rbinom(n=10000,size=10,prob=0.3))
+binomData
+ggplot(binomData, aes(x=Success))+geom_histogram(binwidth = 1)
+```
+
+By increasing trial times makes the binomial distribution to normal distribution.
+```{r}
+binom5<-data.frame(Successes=rbinom(n=10000,size=5, prob=.3),Size=5)
+View(binom5)
+dim(binom5)
+
+head(binom5)
+
+# genberate data with same 10000 rows
+binom10<-data.frame(Successes=rbinom(n=10000,size=10,prob=.3),Size=10)
+dim(binom10)
+head(binom10)
+
+binom100<-data.frame(Successes=rbinom(n=10000,size=100,prob=.3),
+                     Size=100)
+binom1000<-data.frame(Successes=rbinom(n=10000,size=1000,prob=.3),
+                      Size=1000)
+
+# combine all data as a data.frame
+binomAll <- rbind(binom5, binom10, binom100, binom1000)
+dim(binomAll)
+
+tail(binomAll,10)
+
+# make a histogram plot
+ggplot(binomAll, aes(x=Successes))+geom_histogram()
+
+ggplot(binomAll, aes(x=Successes))+geom_histogram()+
+  facet_wrap(~Size)
+
+ggplot(binomAll, aes(x=Successes))+geom_histogram()+
+  facet_wrap(~Size,scales="free")
+```
+
+The accumumulated probability function is:
+$$
+F(a;n,p)=P{X<=a}=\Sigma_{i=0}^a 
+
+\left(
+  \begin{array}{cc}
+n\\
+i
+\end{array}
+\right)
+
+p^i
+(1-p)^{n-i}
+$$
+n: trial times, p=success probability.
+Similar as normal distribution, dbinom(), and pbinom() functions return accumulated probability, distribution respectively.
+- dbinom()
+- rbinom()
+```{r}
+# proobability of x=3 with 10 trials, 0.3 success rate
+dbinom(x=3, size=10, prob=0.3)
+
+# proobability of x<3 with 10 trials, 0.3 success rate
+pbinom(q=3, size=10, prob=0.3)
+
+# The probability can be vectorized
+dbinom(x=1:10, size=10,prob=0.3)
+
+pbinom(q=1:10,size=10,prob=0.3)
+```
+
+When a probability is given, the qbinom() returns quantile point
+```{r}
+qbinom(p=0.3, size=10, prob=0.3)
+qbinom(p=c(0.3,0.35,0.4,0.5,0.6),size=10,prob=.3)
+```
+
+## 14.3 Poisson Distribution
+Poission ditribution is used for count data. 
+$$ 
+P(x;\lambda)=\frac{{\lambda^x e^{-\lambda}}}{x!}
+$$
+The accumulated distribution is 
+$$
+F(a;\lambda)=P{X<=a}=\Sigma_{i=0}^a \frac{\lambda^i e^{-\lambda}}{i!}
+$$
+
+- rpois(): random count
+- dpois(): density
+- ppois(): distribution
+- qpois(): quantile
+```{r}
+
+pois1<-rpois(n=10000,lambda=1)
+pois2<-rpois(n=10000,lambda=2)
+pois5<-rpois(n=10000,lambda=5)
+pois10<-rpois(n=10000,lambda=10)
+pois20<-rpois(n=10000,lambda=20)
+
+pois<-data.frame(Lambda.1=pois1, Lambda.2=pois2, Lambda.5=pois5,Lambda.10=pois10, Lambda.20=pois20)
+
+# reshape2 package for chart
+require(reshape2)
+
+# change data format into long
+pois<- melt(data=pois, variable.name="Lambda",value.name="x")
+
+# stringr for cleaning column
+require(stringr)
+
+pois$Lambda<-as.factor(as.numeric(str_extract(string=pois$Lambda, pattern="\\d+")))
+
+head(pois)
+tail(pois)
+
+summary(pois)
+```
+
+We can check how the poisson distribution is changed to normal distribution as we increase lambda value.
+
+```{r}
+require(ggplot2)
+ggplot(pois,aes(x=x))+geom_histogram(binwidth=1)+facet_wrap(~Lambda)+ggtitle("Probability Mass Function")
+```
+
+Another approach is to draw the multiple distribution on the same chart. 
+```{r}
+ggplot(pois, aes(x=x))+
+  geom_density(aes(group=Lambda, color=Lambda,fill=Lambda),
+               adjust=4, alpha=1/2)+
+  scale_color_discrete()+scale_fill_discrete()+ggtitle("Probability Mass Function")
+
+```
+
+## 14.4 Other Distribution
+
+Table needs to be inserted here.
+
+------------------------------------------
+# Chapter 15: Basic Statistics
+
+## 15.1 Summary statistics
+
+Sample function is used to extract specific numbers with selected size.
+- replace=TRUE:allows duplicate
+
+```{r}
+x<-sample(x=1:100, size=100, replace=TRUE)
+mean(x)
+
+y<-x
+
+# randomly select 20 elements and replace with NA
+y[sample(x=1:100, size=20, replace=FALSE)]<-NA
+y
+```
+
+When we use mean() function to y, NA is returned, as it is the default setting for the mean() function.
+- na.rm: TRUE to exclude NA values
+```{r}
+mean(y)
+mean(y, na.rm=TRUE)
+```
+
+To calculate weighted average, we use weighted.mean() function. 
+- na.rm: exclude NA values
+```{r}
+grades<-c(95,72,87,66)
+weights<-c(1/2,1/4,1/8,1/8)
+mean(grades)
+
+weighted.mean(x=grades,w=weights)
+
+var(x)
+sum((x-mean(x))^2)/(length(x)-1)
+```
+
+The standard error is squared root of variance, and calculated with sd() function. 
+- sd()
+
+```{r}
+sqrt(var(x))
+sd(x)
+
+sd(y)
+sd(y,na.rm=TRUE)
+```
+
+Other functions are min, max, median, auantile.
+```{r}
+quantile(x,probs=c(0.25,0.75))
+```
+
+## 15.2 Correlation and Covariance
+correlation is defined as follows:
+- dataset: economics(ggplot2 library)
+
+$$
+r_{xy}=frac{\Sigma_{i=1}^n (x_i-\hat{x})}{(y_i-\hat{y})}{(n-1)s_xs_y}
+$$
+
+```{r}
+require(ggplot2)
+head(economics)
+```
+
+Economics dataset
+- pce: personal consumption expenditure
+- psavert: personal saving rate
+```{r}
+cor(economics$pce,economics$psavert)
+plot(economics$pce,economics$psavert)
+
+# manually calculate
+xPart<-economics$pce-mean(economics$pce)
+yPart<-economics$psavert-mean(economics$psavert)
+nMinusOne<-(nrow(economics)-1)
+xSD<-sd(economics$pce)
+ySD<-sd(economics$psavert)
+
+sum(xPart*yPart)/(nMinusOne*xSD*ySD)
+```
+
+When we compare multiple columns, cor() function is used as matrix.
+```{r}
+cor(economics[,c(2,4:6)])
+```
+
+These values are easier to understand when plotted. 
+- GGally package (useful pair of charts based on ggplot2)
+ - GGally load reshape package, and contradict with reshap2 package, thus "::" operator shou;ld be used not to download reshape package. 
+```{r}
+GGally::ggpairs(economics,economics[,c(2,4:6)],parm=list(labelSize=8))
+```
+ 
+Heatmap for correlation. High correlation is positive relationship between variables.
+
+```{r}
+# data process
+require(reshape2)
+# chart description
+require(scales)
+
+# load economics data rom ggplot package
+require(ggplot2)
+econCor<-cor(economics[,c(2,4:6)])
+
+# Conversion to Long format
+econMelt<-melt(econCor,varnames = c("x","y"),value.name = "Correlation")
+
+# sort by correlation
+econMelt<-econMelt[order(econMelt$Correlation),]
+
+edit(econMelt)
+
+# ggplot chart
+
+# x, y as axis
+ggplot(econMelt,aes(x=x,y=y))+
+  geom_tile(aes(fill=Correlation))+
+  
+  scale_fill_gradient2(low=muted("red"),mid="white",high="steelblue",
+                      guide=guide_colorbar(ticks=FALSE,barheight = 10),
+                      limits=c(-1,1))+
+                        theme_minimal()+
+                        labs(x=NULL,y=NULL)
+
+# theme_minimal: minimal theme is inserted into chart
+# x-axis, y-axis label is empty
+
+```
+ 
+Missing values are problematic for correplation. Instead of na.rm=TRUE, "all.obs","complete.obs","parwise.complete.obs","everything" or "na.or.complete" are used.
+```{r}
+m<-c(9,9,NA,3,NA,5,8,1,10,4)
+n<-c(2,NA,1,6,6,4,1,1,6,7)
+p<-c(8,4,3,9,10,NA,3,NA,9,9)
+q<-c(10,10,7,8,4,2,8,5,5,2)
+r<-c(1,9,7,6,5,6,2,7,9,10)
+
+# combine
+theMat<-cbind(m,n,p,q,r)
+```
+
+(1) everything 
+There should not be any NA in all columns, otherwise return NA. 
+(2) all.obs
+If there ia at least one NA in any column, error message is returned.
+```{r}
+cor(theMat,use="everything")
+cor(theMat,use="all.obs")
+```
+
+(3) complete.obs
+(4) na.or.complete
+```{r}
+cor(theMat,use="complete.obs")
+cor(theMat,use="na.or.complete")
+cor(theMat[c(1,4,7,9,10),])
+
+identical(cor(theMat,use="na.or.complete"),
+          cor(theMat[c(1,4,7,9,10),]))
+```
+
+Last option is "pairwise.complete", and further comprehensive. Compare two columns and keep row in cases each entry is not NA.
+```{r}
+# the entire correlation matrix
+cor(theMat,use="pairwise.complete.obs")
+
+# compare m-column and n-column 
+cor(theMat[,c("m","p")],use="complete.obs")
+```
+
+ggpair
+```{r}
+data(tips,package="reshape2")
+head(tips)
+
+GGally::ggpairs(tips)
+```
+
+## 15.3 t-statistics
+T statistics is used for data average or two group average.
+
+```{r}
+tips
+
+# observer's sex
+unique(tips$sex)
+unique(tips$day)
+```
+
+### 15.3.1 t-test for single observation
+We test whether the average value is 2.5. 
+```{r}
+t.test(tips$tip,alternative="two.sided",mu=2.5)
+```
+
+The result provides 95% confidence interval, p-value etc. From this result, the average is not equal to 2.5.T-value is a difference between observation average and null-hypothesis avarage, divided by standard diviation. 
+$$
+t-statistics=\frac{\hat{x}-\mu_0}{s_x/\sqrt{n}}
+$$
+
+We visualize the results by drawing t-distribution.
+```{r}
+# distribution
+require(ggplot2)
+randT<-rt(3000,df=NROW(tips)-1)
+
+# t-value and other information
+tipTTest<-t.test(tips$tip,alternative="two.sided",mu=2.50)
+
+ggplot(data.frame(x=randT))+
+  geom_density(aes(x=x),fill="grey",color="grey")+
+  geom_vline(xintercept=tipTTest$statistic)+
+  geom_vline(xintercept=mean(randT)+c(-2,2)*sd(randT),linetype=2)
+
+```
+
+Next, we test whether the average exceeds 2.5 by single t-test.
+- tips data: reshape2
+```{r}
+require(reshape2)
+t.test(tips$tip,alternative="greater",mu=2.5)
+
+```
+
+The results shows that p-value, and the average iw more than 2.5, corrsponding to confidence interval.
+
+### 15.3.2 t-test for two observations
+When we compare two samples, we use t-test.Using tips dataset, we are going to compare tips amount by male/female waiter. We first check variance of two samples.
+```{r}
+# First compare variance of two samples
+aggregate(tip~sex, data=tips,var)
+
+# test of nomality of tips distribution
+shapiro.test(tips$tip)
+shapiro.test(tips$tip[tips$sex=="Female"])
+shapiro.test(tips$tip[tips$sex=="Male"])
+
+
+# We didn't pass any test, so visualize the results
+ggplot(tips, aes(x=tip,fill=sex))+
+  geom_histogram(binwidth=.5, alpha=1/2)
+
+```
+
+As We cannot observe normality, we check whether the variance of two samples is identical by nonparametric ansari.bradley test. 
+```{r}
+ansari.test(tip~sex, tips)
+```
+
+Thsi results show that variance is identical, and we can use t-test for two samples. 
+```{r}
+t.test(tip~sex, data=tips,var.equal=TRUE)
+```
+
+The result is not statistically significant,and we conclude that tip was given, irrespective of male/female. We could also check that average of both samples are within two standard deviation.
+```{r}
+require(plyr)
+tipsummary<-ddply(tips,"sex",summarize,
+                  tip.mean=mean(tip),tip.sd=sd(tip),
+                  Lower=tip.mean-2*tip.sd/sqrt(NROW(tip)),
+                  Upper=tip.mean+2*tip.sd/sqrt(NROW(tip)))
+tipsummary
+```
+
+dply() package dvides the sample by sex, and summarize respectively. This function generates new data.frame.
+
+```{r}
+ggplot(tipsummary,aes(x=tip.mean,y=sex))+geom_point()+
+  geom_errorbarh(aes(xmin=Lower,xmax=Upper),height=.2)
+```
+
+### 15.3.3 t-test of two corresponding observations
+t-test of two corresponding variables is used for twin baby  identification, comparison of pre/post medical operation, comparison of father/son. 
+- t.test(): paired=TRUE
+- usingR package
+```{r}
+install.packages("UsingR")
+require(UsingR)
+summary(father.son)
+
+t.test(father.son$fheight,father.son$sheight,paired=TRUE)
+```
+
+We can conclude that we reject null hypothesis, and father's height is different from son's height. When we visualize probability density of height difference. 
+- average of the distribution is not 0
+- confidence interval is not 0
+
+```{r}
+heightDiff<-father.son$fheight-father.son$sheight
+ggplot(father.son,aes(x=fheight-sheight))+
+  geom_density()+
+  geom_vline(xintercept=mean(heightDiff))+
+  geom_vline(xintercept=mean(heightDiff)+
+               2*c(-1,1)*sd(heightDiff)/sqrt(nrow(father.son))
+             ,linetype=2)
+```
+
+## 15.4 Variance Analysis
+
+For applying ANOVA,the following formula needs to be rememberd. 
+However, in the R function, aov() is useful for conducing ANOVA. 
+- Left: Variable of interest (i.e., tip)
+- Right: control value (i.e.,day)
+
+$$
+F=\frac{\Sigma_i {n_i(\hat{Y_i}-\hat{Y})^2/(K-1)}}{\Sigma_i {(\hat{Y_{ij}}-\hat{Y})^2/(N-K)}}
+$$
+```{r}
+tipAnova<-aov(tip~day-1, tips)
+tipAnova$coefficients
+tipintercept<-aov(tip~day, tips)
+tipintercept$coefficients
+```
+
+In the variance analysis, we can 
+```{r}
+summary(tipAnova)
+```
+
+By the above test, p-value is significant, we would like to see which group has difference. The simplest way is plot/confirm group average and confidence interval. 
+- nrow: data.frame, matrix
+NROW: first dimensional object
+- 
+```{r}
+require(plyr)
+tipsByDay<-ddply(tips,"day",summarize,
+                tip.mean=mean(tip),tip.sd=sd(tip),
+                Length=NROW(tip),
+                tfrac=qt(p=.90,df=Length-1),
+                Lower=tip.mean-tfrac*tip.sd/sqrt(Length),
+                Upper=tip.mean+tfrac*tip.sd/sqrt(Length))
+              
+
+edit(tipsByDay)
+ggplot(tipsByDay,aes(x=tip.mean,y=day))+geom_point()+
+  geom_errorbarh(aes(xmin=Lower,xmax=Upper),height=.3)
+
+nrow(tips)
+NROW(tips)
+nrow(tips$tip)
+NROW(tips$tip)
+```
+
+
+
+# 16 Linear Model 
+## 16.1 Single linear regression 
+
+Single linear regression
+$$
+y=a+bx+\epsilon \\
+b=\frac{\Sigma_{i=1}^n(x_i-\overline{x})(y_i-\overline{y})}{\Sigma_{i=1}^n (xi-\overline{x})^2} \\
+a=\overline{y}-b \\
+\epsilon ~ N(0,1)
+$$
+We are going to conduct a linear regression.
+- father.son (UsingR package)
+
+```{r}
+require(UsingR)
+require(ggplot2)
+head(father.son)
+
+ggplot(father.son,aes(x=fheight,y=sheight))+geom_point()+
+  geom_smooth(method="lm")+labs(x="Fathers",y="sons")
+```
+
+The above code generates single linear regression, but we cannnot trust it. We will use lm() function.
+```{r}
+heightsLM<-lm(sheight~fheight,data=father.son)
+heightsLM
+```
+
+standard devision can be obtained by summary() function.
+```{r}
+summary(heightsLM)
+```
+
+### 16.1.1 Alternative to variance analysis
+An alternative methos is to regress a category variable without intercept.
+- tips: reshape2
+```{r}
+install.packages("reshape2")
+require(reshape2)
+data(tips,package="reshape2")
+edit(tips)
+
+tipsAnova<-aov(tip~day-1,data=tips)
+summary(tipsAnova)
+# -1 is used to exclude intercept
+# day is category variable
+
+tipsLM<-lm(tip~day-1,data=tips)
+summary(tipsLM)
+```
+
+both in ANOVA and regression analysis, F-statistics and degree of freedom are identical. When we visualize coefficient and standard devision, we can get same results. 
+
+```{r}
+# we manually calculate average and confidence interval
+require(plyr)
+
+tipsByDay<-ddply(tips,"day",summarize,
+                 tip.mean=mean(tip),tip.sd=sd(tip),
+                 Length=NROW(tip),
+                 tfrac=qt(p=.90,df=Length-1),
+                 Lower=tip.mean-tfrac*tip.sd/sqrt(Length),
+                 Upper=tip.mean+tfrac*tip.sd/sqrt(Length))
+
+# Extract data from tipsLM
+tipsInfo<-summary(tipsLM)
+tipsCoef<-as.data.frame(tipsInfo$coefficients[,1:2])
+tipsCoef<-within(tipsCoef,{
+  Lower<-Estimate-qt(p=0.90, df=tipsInfo$df[2])*'`Std.Error`
+  Upper<-Estimate+qt(p=0.90, df=tipsInfo$df[2])*`Std.Error`  day<-rownames(tipsCoef)
+  })
+
+# Plot both anova and regression results
+
+ggplot(tipsByDay,aes(x=tip.mean,y=day))+geom_point()+
+  geom_errorbarh(aes(xmin=Lower,xmax=Upper),height=.3)+
+  ggtitle("Tips by day calculated manually")
+
+ggplot(tipsByDay,aes(x=Estimate,y=day))+geom_point()+
+  geom_errorbarh(aes(xmin=Lower,xmax=Upper),height=.3)+
+  ggtitle("Tips by day calculated from regression model")
+```
+
+- within(): we can create a new column in data.frame.When we refer blank column (i.e., Std.Error), we need to use back quote (`).
+
+# 16.2 Multiple regression
+
+Original data - http://jaredlander.com/data/housing.csv
+- read.table() function 
+- argument: sep, header,stringsAsFactors
+
+```{r}
+housing <- read.table("http://jaredlander.com/data/housing.csv
+", sep = ",", header = TRUE, stringsAsFactors = FALSE) 
+```
+
+We change variable name 
+```{r}
+# variable name change
+names(housing)
+names(housing) <- c("Neighborhood", "Class", "Units", "YearBuilt", 
+                    "SqFt", "Income", "IncomePerSqFt", "Expense",
+                    "ExpensePerSqFt","NetIncome", "Value", "ValuePerSqFt",
+                    "Boro")
+head(housing)
+```
+
+WE visualize data, treating ValuePerSqFt as object function.
+```{r}
+#data visualization
+install.packages("ggplot2")
+require(ggplot2)
+ggplot(housing, aes(x=ValuePerSqFt)) +
+  geom_histogram(binwidth = 10) + labs(x = "Value per Squire Foot")
+
+```
+
+When we can see binary tend, we mapp it by Boro.
+```{r}
+# ggplot by boro
+ggplot(housing, aes(x=ValuePerSqFt, fill = Boro)) +
+  geom_histogram(binwidth = 10)+ xlab("Value per Square Foot")
+ggplot(housing, aes(x=ValuePerSqFt, fill = Boro)) +
+  geom_histogram(binwidth = 10)+ labs(x="Value per Square Foot")+
+  facet_wrap(~Boro)
+```
+
+Next, we check SqFt and housing units. 
+```{r}
+# ggplot - histogram by SqFt/Units
+ggplot(housing, aes(x=SqFt)) + geom_histogram()
+ggplot(housing, aes(x=Units)) + geom_histogram()
+
+ggplot(housing[housing$Units<1000,], aes(x=SqFt))+geom_histogram()
+ggplot(housing[housing$Units<1000,],aes(x=Units)) + geom_histogram()
+```
+
+```{r}
+##ggplot - point by SqFt/Units
+ggplot(housing, aes(x =SqFt, y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =Units, y = ValuePerSqFt)) + geom_point()
+ggplot(housing[housing$Units<1000,], aes(x =SqFt, y = ValuePerSqFt)) + geom_point()
+ggplot(housing[housing$Units<1000,], aes(x =Units, y = ValuePerSqFt)) + geom_point()
+```
+
+Outliers are excluded as follows.
+```{r}
+#Exclude outlier
+sum(housing$Units>=1000)
+housing1 <- housing[housing$Units < 1000, ]
+```
+
+Log-conversion
+```{r}
+#log-conversion
+require(ggplot2)
+
+#by SqFt
+ggplot(housing, aes(x =SqFt, y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =log(SqFt), y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =SqFt, y = log(ValuePerSqFt))) + geom_point()
+ggplot(housing, aes(x =log(SqFt), y = log(ValuePerSqFt))) + geom_point()
+
+ggplot(housing, aes(x =Units, y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =log(Units), y = ValuePerSqFt)) + geom_point()
+ggplot(housing, aes(x =Units, y = log(ValuePerSqFt))) + geom_point()
+ggplot(housing, aes(x =log(Units), y = log(ValuePerSqFt))) + geom_point()
+
+```
+
+After converting some variables into log-based variable, we fit a linear model into the dataset.
+- coefplot() function
+```{r}
+#regression analysis
+house2 <- lm(ValuePerSqFt ~ Units + SqFt + Boro, data=housing1)
+summary(house2)
+house2$coefficients
+
+require(ggplot2)
+
+install.packages("coefplot")
+require(coefplot)
+
+coefplot(house2)
+```
+
+Next, we try other models (i.e., house3 and house4). 
+```{r}
+#Inclusing of interaction term
+house3 <- lm(ValuePerSqFt ~ Units*SqFt + Boro, data=housing1)
+house4 <- lm(ValuePerSqFt ~ Units:SqFt + Boro, data=housing1)
+house3$coefficients
+house4$coefficients
+coefplot(house3)
+coefplot(house4)
+```
+
+Case where the interaction terms for more than two variables.  
+```{r}
+house5 <- lm(ValuePerSqFt ~ Units*SqFt*Boro, data=housing1)
+house5$coefficients
+```
+
+```{r}
+house6<- lm(ValuePerSqFt ~ Class*Boro, data=housing1)
+house6$coefficients
+
+house7 <- lm(ValuePerSqFt ~ I(SqFt/Units)+Boro, data=housing1)
+house7$coefficients
+
+house8 <- lm(ValuePerSqFt ~ (Units + SqFt)^2, data = housing1)
+house8$coefficients
+house9 <- lm(ValuePerSqFt ~ Units*SqFt, data = housing1)
+identical(house8$coefficients, house9$coefficients)
+
+house10 <- lm(ValuePerSqFt ~ I(Units + SqFt)^2, data=housing1)
+house10$coefficients
+```
+
+```{r}
+#model coefficient comparison
+multiplot(house2, house3, house4)
+
+housingNew <- read.table("http://www.jaredlander.com/data/housingNew.csv", sep=",",header=TRUE,stringsAsFactors=FALSE)
+housePredict <- predict(house2, newdata = housingNew, se.fit = TRUE, interval ="prediction", level=.95)
+head(housePredict$fit)
+head(housePredict$se.fit)
+house2$coefficients
+```
+
+# Chapter 17: Generalized Linear Model (GLM)
+## 17.1 Logistic regression
+We use data of the 2010 American Community Survey (ACS) for logistic regression.
+
+data loading
+- original dataset: http://jaredlander.com/data/acs_ny.csv
+
+Logistic regression
+$$
+p(y_i=1)=logit^{-1}(X_i\beta)
+
+\\logit^{-1}(x)=\frac{e^x}{1+e^x}
+$$
+
+```{r}
+acs <- read.table("http://jaredlander.com/data/acs_ny.csv", sep=",", header=TRUE, stringsAsFactors = FALSE)
+
+acs$income <- with (acs, FamilyIncome >= 150000)
+
+require(ggplot2)
+require(useful)
+
+ggplot(acs, aes(x=FamilyIncome)) + 
+  geom_density(fill = "grey", color = "grey") +
+  geom_vline(xintercept = 150000)
+  scale_x_continuous(label = multiple.dollar, limits = c(0,1000000))
+  
+head(acs)
+```
+
+Logistic regression is very similar to linear regression.
+```{r}
+# logistic analysis
+income1 <- glm(income ~ HouseCosts + NumWorkers +OwnRent + NumBedrooms +
+                 FamilyType, family = binomial(link = "logit"), data=acs)
+summary(income1)
+require(coefplot)
+coefplot(income1)
+```
+
+To interpret coefficients of logistic regression, we need to do inverse-logit conversion. 
+```{r}
+invlogit <- function (x)
+{
+  1/(1+exp(-x))
+}
+invlogit(income1$coefficients)
+```
+
+## 17.2 Poisson Regression
+ACS data is used for poisson regression (i.e., NumChildren is object variable).
+
+$$
+y_i~pois(\theta_i) \\
+\theta_i=e^{X_i\beta_i}
+$$
+Before fitting the poisson regression model, we would describe NumChildren by histogram.
+
+```{r}
+ggplot(acs, aes(x=NumChildren)) + geom_histogram(binwidth = 1)
+
+Children1 <- glm(NumChildren ~ FamilyIncome + FamilyType + OwnRent, data=acs, family = poisson(link = "log"))
+
+summary(Children1)
+coefplot(Children1)
+
+```
+
+One concern regarding poisson regression isthe excess variance, and not satisfying theorecal assumptions that both mean and variance are same. Over variance is defined as follows.
+
+$$
+OD = \frac{1}{n-p}\Sigma_{i=1}^n z_i^2 \\
+z_i=\frac{y_i-\hat{y_i}}{sd(hat{y_i)}
+$$
+
+```{r}
+# residual standardization 
+z <- (acs$NumChildren - Children1$fitted.values) /
+    sqrt(Children1$fitted.values)
+
+# over-variance factor
+sum(z^2) / Children1$df.residual
+# over-variance p-value
+pchisq(sum(z^2), Children1$df.residual)
+
+Children2 <- glm(NumChildren ~ FamilyIncome + FamilyType + OwnRent,
+                 data = acs, family=quasipoisson(lin = "log"))
+multiplot(Children1, Children2)
+
+```
+
+## 17.4 Survival Analysis 
+Survival analysis is unique in terms that data is cut off, or missing (e.g., event, stop). 
+- Dataset: bladder
+
+```{r}
+install.packages("survival")
+require(survival)
+
+bladder
+head(bladder)
+edit(bladder)
+
+# check specific rows
+bladder[100:105,]
+
+#objective function check
+survObject <-with(bladder[100:105,], Surv(stop,event))
+survObject
+survObject[,1:2]
+```
+
+The modeling for survival analysis is coxph() function based on Cox proportional Hazard model.
+
+```{r}
+cox1 <- coxph(Surv(stop,event) ~ rx + number + size + enum,
+              data = bladder)
+summary(cox1)
+
+plot(survfit(cox1), xlab="Days",ylab="Survival Rate", conf.int=TRUE)
+```
+
+```{r}
+cox2 <- coxph(Surv(stop,event) ~ strata(rx) + number + size + enum,
+    data =bladder)
+summary(cox2)
+plot(survfit(cox2), xlab="Days",ylab="Survival Rate", conf.int=TRUE, col=1:2)
+legend ("bottomleft", legend=c(1,2), lty=1, col=1:2, text.col=1:2, title="rx")
+```
+
+To test the proportional harzard, we use cox.zph() function.
+```{r}
+cox.zph(cox1)
+cox.zph(cox2)
+```
+
+# Chapter 18: Model Evaluation
+# Section 18.1: Residuals
+
+As a measure, we use residual analysis.
+-dataset: housing
+```{r}
+housing <- read.table("http://jaredlander.com/data/housing.csv", sep = ",", header = TRUE, stringsAsFactors = FALSE)
+
+names(housing) <- c("Neighborhood", "Class", "Units", "YearBuilt", 
+                    "SqFt", "Income", "IncomePerSqFt", "Expense",
+                    "ExpensePerSqFt","NetIncome", "Value", "ValuePerSqFt",
+                    "Boro")
+
+edit(housing)
+
+ggplot(data=housing,aes(x=Units,y=ValuePerSqFt))+geom_point()
+```
+
+We exclude outliers.
+2
+```{r}
+##outlier exclusion
+housing <-housing[housing$Units < 1000,]
+head(housing)
+edit(housing)
+
+ggplot(data=housing,aes(x=Units,y=ValuePerSqFt))+geom_point()
+
+```
+
+After data setting, we will fit a linear model,taking valuePerSqFt as object variable.
+```{r}
+# Model estimation
+house1 <- lm(ValuePerSqFt ~ Units + SqFt + Boro, data = housing)
+summary(house1)
+require(coefplot)
+coefplot(house1)
+```
+
+
+
+
+
+
+
