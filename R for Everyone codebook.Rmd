@@ -2622,7 +2622,97 @@ require(coefplot)
 coefplot(income1)
 ```
 
-# Chapter18: Model Evaluation 
+To interpret coefficients of logistic regression, we need to do inverse-logit conversion.
+
+```{r}
+invlogit <- function (x)
+{
+  1/(1+exp(-x))
+}
+invlogit(income1$coefficients)
+```
+
+## 17.2 Poisson Regression
+ACS data is used for poisson regression (i.e., NumChildren is object variable).
+
+$$
+y_i~pois(\theta_i) \ \theta_i=e^{X_i\beta_i} 
+$$ 
+Before fitting the poisson regression model, we would describe NumChildren by histogram.
+
+```{r}
+ggplot(acs, aes(x=NumChildren)) + geom_histogram(binwidth = 1)
+
+Children1 <- glm(NumChildren ~ FamilyIncome + FamilyType + OwnRent, data=acs, family = poisson(link = "log"))
+
+summary(Children1)
+coefplot(Children1)
+```
+
+One concern regarding poisson regression isthe excess variance, and not satisfying theorecal assumptions that both mean and variance are same. Over variance is defined as follows.
+
+$$ 
+OD = \frac{1}{n-p}\Sigma_{i=1}^n z_i^2 \ z_i=\frac{y_i-\hat{y_i}}{sd(hat{y_i)} 
+$$
+```{r}
+# residual standardization 
+z <- (acs$NumChildren - Children1$fitted.values) /
+    sqrt(Children1$fitted.values)
+
+# over-variance factor
+sum(z^2) / Children1$df.residual
+# over-variance p-value
+pchisq(sum(z^2), Children1$df.residual)
+
+Children2 <- glm(NumChildren ~ FamilyIncome + FamilyType + OwnRent,
+                 data = acs, family=quasipoisson(lin = "log"))
+multiplot(Children1, Children2)
+```
+
+## 17.4 Survival Analysis
+Survival analysis is unique in terms that data is cut off, or missing (e.g., event, stop).
+- Dataset: bladder
+```{r}
+install.packages("survival")
+require(survival)
+
+bladder
+head(bladder)
+edit(bladder)
+
+# check specific rows
+bladder[100:105,]
+
+#objective function check
+survObject <-with(bladder[100:105,], Surv(stop,event))
+survObject
+survObject[,1:2]
+```
+
+The modeling for survival analysis is coxph() function based on Cox proportional Hazard model.
+```{r}
+cox1 <- coxph(Surv(stop,event) ~ rx + number + size + enum,
+              data = bladder)
+summary(cox1)
+
+plot(survfit(cox1), xlab="Days",ylab="Survival Rate", conf.int=TRUE)
+```
+
+```{r}
+cox2 <- coxph(Surv(stop,event) ~ strata(rx) + number + size + enum,
+    data =bladder)
+summary(cox2)
+plot(survfit(cox2), xlab="Days",ylab="Survival Rate", conf.int=TRUE, col=1:2)
+legend ("bottomleft", legend=c(1,2), lty=1, col=1:2, text.col=1:2, title="rx")
+```
+
+To test the proportional harzard, we use cox.zph() function.
+```{r}
+cox.zph(cox1)
+cox.zph(cox2)
+```
+
+# Chapter 18: Model Evaluation 
 Resdual analysis, ANOVA test, Wald test, AIC, BIC score, cross validation error, bootstrap are used to evaluate models.
 
 ## Section 18.1: Residuals
@@ -3486,8 +3576,415 @@ ggplot(credit,aes(x=CreditAmount,y=Age))+
   scale_x_continuous(labels=multiple)
 ```
 
-
-
-
 ## 20.4 Decision Tree Model 
+Regression tree model divides predictors into M boundaries (ie., R1, R2,...,RM), taking the response variable y as each boundary's average.
+
+$$
+\hat{f(x)}=\Sigma\hat{c_m}I(x\in{R_m}) \\
+\hat{c_m}=avg(y_i|x_i\in{R_m})
+$$
+Classification tree also dvides each predictors into M boundaries, and each class's portion is calculated as:
+$$
+\hat{p}_{mk}=\frac{1}{N_m}\Sigma I(y_i=k)
+$$
+,where Nm is the number of items in boundary m,and the sum part is the number of observations in class k in boundary m.
+```{r}
+require(rpart)
+
+theURL<-"http://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.data"
+
+Credit<-read.table(theURL, sep="",header=FALSE,
+                   col.names=creditNames,
+                   stringsAsFactors = FALSE)
+
+creditTree <- rpart(Credit~CreditAmount+Age+
+                      CreditHistory+Employment,data=credit)
+
+creditTree
+```
+
+## 20.5 Random Forest
+
+credit data: 
+- predictors: CreditHistory,Purpose,Employment,Duration,Age,CreditAmount
+
+When we apply random forest, randomForest() function in randomForest package. Generally, we need insert the formula into the randomForest function, but its recommended that we insert predictor/response variable matrix respectively.
+```{r}
+require(useful)
+
+install.packages("randomForest")
+require(randomForest)
+
+creditFormula<- Credit~CreditHistory+Purpose+Employment+Duration+Age+CreditAmount
+creditX<-build.x(creditFormula,data=credit)
+creditY<-build.y(creditFormula,data=credit)
+edit(creditY)
+
+## random forest application
+creditForest<-randomForest(x=creditX,y=creditY)
+creditForest
+```
+
+# Chapter 21: Time-series and auto-correlation
+## 21.1. Auto correlation moving average
+
+General methods for the time-series dat are auto-regressive (AR), moving average (MA) and both (ARMA). These models can be applied easily in R.
+
+ARMA (p.q)
+$$
+X_t - \sigma
+$$
+
+```{r}
+install.packages("WDI")
+require(WDI)
+
+#data collection
+gdp<-WDI(country=c("US","CA","GB","DE","CN","JP","SG","IL"),
+         indicator=c("NY.GDP.PCAP.CD","NY.GDP.MKTP.CD"),
+         start=1960,end=2011)
+names(gdp)<-c("iso2c","country","Year","PerCapGDP","GDP")
+
+head(gdp)
+```
+
+We can check GDP per capita for long-term period for each country. 
+```{r}
+## data visualize
+
+head(gdp)
+
+require(ggplot2)
+require(scales)
+
+# Y: GDP per Capital
+ggplot(data=gdp,aes(Year,PerCapGDP,color=country,linetype=country))+
+  geom_line()+scale_y_continuous(label=dollar)
+
+## Y: Total GDP 
+require(useful)
+ggplot(data=gdp,aes(Year,GDP,color=country,linetype=country))+
+  geom_line()+scale_y_continuous(label=multiple_format(extra=dollar,multiple="M"))
+```
+
+Let's extract US data, and check time-series trend.
+```{r}
+## US data extract
+us <- gdp$PerCapGDP[gdp$country=="United States"]
+
+## data conversion to time-series data
+us <- ts(us,start=min(gdp$Year),end=max(gdp$Year))
+
+us
+plot(us)
+```
+
+Another method to evaluate time series data is look at auto covariance function (ACF) and partial auto covariance function (PACF).
+- acf() function: take correlation of auto lagged time series data
+- pacf() function: asuumed that lag 1 auto correlation affects lag 2 and later on
+
+The below result shows the acf and pacf for us data, and the bar exceeding the horizontal line shows auto correlation, and acf/pacf is significant.
+
+```{r}
+acf(us)
+pacf(us)
+```
+
+The time series data needs some conversion, as the upward trend shows the time series is not covariance stationary. We need a conversion or DID.
+- differentials: diff
+- argument: lag
+```{r}
+x <- c(1,4,8,2,6,6,5,3)
+
+# one difference
+diff(x,differences=1)
+
+# two differences (differences of one difference)
+diff(x,differences=2)
+
+# lag method
+diff(x,lag=1)
+
+# difference two number distance 
+diff(x,lag=2)
+```
+
+To find appropriate differences, we do have several functions in forecast package.
+```{r}
+install.packages("forecast")
+require(forecast)
+ndiffs(x=us)
+plot(diff(us,2))
+```
+
+Base R hasARMA model'S function, arima() function, which is a strong model for serial differences and seasonality. 
+
+Conventionaly, we need to run ACF and PACF to find the best order of each component in the model.This process is automated with auto.arima in forecast package.
+
+```{r}
+# ARIMA Model
+usBest<-auto.arima(x=us) 
+usBest
+```
+
+This model minimizes the AICC (adjusted AIC)  to find the optimal model, ARMA (2,1). ARMA(2.1) is AR(2) component and MA(1) component. As the differences is two, the model is ARIMA. IF this model is fitted well, the residual should follow white noise.
+
+The below chart shows the ACF and PACF of the optimal model, which are similar to white noise.
+```{r}
+# residual ACF/PACF
+acf(usBest$residuals)
+pacf(usBest$residuals)
+```
+
+We confirm coefficients of AR and MA components.
+```{r}
+coef(usBest)
+```
+
+Similar to other modesl, we use predict() function for ARIMA model.
+```{r}
+# five year prediction including standard dev
+predict(usBest,n.ahead=5, se.fit=TRUE)
+
+# forecast value is created 
+theForecast<-forecast(object=usBest,h=5)
+plot(theForecast)
+theForecast
+```
+
+## 21.2 VAR
+We need to convert all data into multi-variate time series data.
+(1) convert data into data.frame 
+(2) apply ts() function
+```{r}
+require(reshape2)
+gdpCast<-dcast(Year~country,data=gdp[,c("country","Year","PerCapGDP")],value.var="PerCapGDP")
+gdpCast
+class(gdpCast)
+```
+
+Data processing
+```{r}
+
+# Germany: insufficient data(10 years) -> exclude
+gdpCast <-subset(gdpCast,Germany !="NA")
+gdpTS<- ts(data=gdpCast[,-1],start=min(gdpCast$Year),
+           end=max(gdpCast$Year))
+
+# Base graphics - chart prep
+plot(gdpTS, plot.type="single",col=1:8)
+legend("topleft",legend=colnames(gdpTS),ncol=2,lty=1,
+       col=1:8,cex=.9)
+```
+
+```{r}
+gdpTS <-gdpTS[,which(colnames(gdpTS)!="Germany")]
+```
+
+
+The general modeling approach to deal with multiple time series data is vector autoregressive (VAR) model.
+
+$$
+X_t=\phi_1X_{t-1}+...+\phi_pX{t-p}+Z_t \\
+{Z_t}~WN(0,\Sigma).. white noise
+$$
+ar() can calculate VAR, however, matrix problem arises when the order of AR becomes high. Thus, it is recommended to use VAR() function in the vars package. To calculate appropriate difference order, we apply ndiffs() function to gdpTS data.
+- ndiffs()
+
+```{r}
+numDiffs <-ndiffs(gdpTS)
+numDiffs
+
+gdpDiffed<-diff(gdpTS, differences=numDiffs)
+
+plot(gdpDiffed, plot.type="single",col=1:7)
+legend("topleft", legend=colnames(gdpDiffed),ncol=2,lty=1,
+        col=1:7,cex=.9)
+
+```
+
+As we are ready, VAR model is fitted. Intuitively, we apply lm() to the t data and other lagged data.
+```{r}
+# VAR model application
+install.packages("vars")
+require(vars)
+gdpVar<-VAR(gdpDiffed,lag.max=12)
+gdpVar$p
+
+# each model name
+names(gdpVar$varresult)
+
+# each moidel is lm object
+class(gdpVar$varresult$Canada)
+class(gdpVar$varresult$Japan)
+
+# each model has respective coefficient
+head(coef(gdpVar$varresult$Canada))
+head(coef(gdpVar$varresult$Japan))
+
+# coefficient plot
+require(coefplot)
+coefplot(gdpVar$varresult$Canada)
+coefplot(gdpVar$varresult$Japan)
+
+# predict model
+predict(gdpVar,n.ahead=5)
+
+```
+
+## 21.3 GARCH
+The diadvantage of ARMA model is that ARMA cannont deal with abrupt event or high volatility. The ARCH (Generalized Autoregressive Conditional Heteroskedasticity) model is better for this, modeling average/variance of process.
+
+GARCH(m,s) variance model
+$$
+\epsilon_t=\sigma_te_t \\
+\sigma_t^2=\alpha_0+\alpha_1\epsilon_{t-1}^2+...+\alpha_m\epsilon_{t-m}^2+\beta_1\sigma_{t-1}^2+...+\beta_s\sigma_{t-s}^2 \\
+e-GWN(0,1)
+$$
+```{r}
+install.packages("quantmod")
+require(quantmod)
+att<-getSymbols("T",auto.assign=FALSE)
+
+require(xts)
+head(att)
+
+plot(att)
+```
+
+```{r}
+chartSeries(att)
+addBBands()
+addMACD(32,50,12)
+
+attClose <- att$T.Close
+class(attClose)
+head(attClose)
+```
+
+GARCH model can be applied through rugarch package. Other than this, there are tseries,fGarch,bayseGARCH functions.
+
+Generally, it would be sufficient to apply GARCH(1,1) model to the data. The first step is to prepare a model using ugarchspec. We identify variation to apply GARCH(1,1) and model mean by ARIMA(1,1)
+```{r}
+# rugarch function
+install.packages("rugarch")
+require(rugarch)
+attSpec<-ugarchspec(variance.model=list(model="sGARCH",
+                                        garchOrder=c(1,1)),
+mean.model=list(armaOrder=c(1,1)),
+distribution.model="std")
+
+attGarch <- ugarchfit(spec=attSpec,data=attClose)
+attGarch
+b
+## attGarch - S4 object, slot fit - list (element accessible by $)
+plot(attGarch@fit$residuals,type="l")
+plot(attGarch, which=10)
+```
+
+To evaluate model, we prepare a model with slight modification of mean modeling part (ARMA), and compare AICs. From AIC and BIC, we consider the first and fourth models are best. 
+
+```{r}
+# AIC comparsion - model accuracy 
+## ARMA(1,1)
+attSpec1 <-ugarchspec(variance.model=list(model="sGARCH",
+                                          garchOrder=c(1,1)),
+                      mean.model=list(armaOrder=c(1,1)),
+                                      distribution.model="std")
+## ARMA(0,0)
+attSpec2 <-ugarchspec(variance.model=list(model="sGARCH",
+                                          garchOrder=c(1,1)),
+                      mean.model=list(armaOrder=c(1,1)),
+                      distribution.model="std")
+
+## ARMA(0,2)
+attSpec3 <-ugarchspec(variance.model=list(model="sGARCH",
+                                          garchOrder=c(1,1)),
+                      mean.model=list(armaOrder=c(1,1)),
+                      distribution.model="std")
+```
+
+We can prepare a chart of object made by rugarch, using ugarchboot() function.
+```{r}
+attPred <- upgarchboot(attGarch, n.ahead=50,
+                       method=c("Partial","Full")[1])
+plot(attPred,which=2)
+```
+
+As this data is stock data, we model the logged return rather than the end value.
+```{r}
+# take log differences, and exclude first NA
+attLog <- diff(log(attClose))[-1]
+
+attLogSpec <- ugarchspec(variance.model=list(model="sGARCH",
+                                             garchOrder=c(1,1)),
+                         mean.model=list(armaOrder=c(1,1)),
+                         distribution.model="std")
+
+# apply model
+attLogGarch <- ugarchfit(spec=attLogSpec,data=attLog)
+attLogGarch <- ugarchfit(spec=attLogSpec,data=attLog)
+infocriteria(attLogGarch)
+```
+
+This led to a significant decrease in AIC. The purpose of GARCH model is not to fit the model to the signal, rather understand the variation. 
+
+# Chapter 22: Clustering
+# 22.1 K-means clustering
+dataset: http://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.names
+
+dataset load
+```{r}
+theURL<-"http://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data"
+wine<-read.table(theURL, sep=",",header=F)
+colnames(wine) <- c("Cultivar","Alchol","Malic.acid","Ash","Alcalinity.of.ash","Magnesium","Total/phenols","Flavanoids","Nonflavanoids","Proanthocyanins","Color.intensity","Hue","OD280.OD315.of.diluted.wines","Proline" )
+head(wine)
+```
+
+Cultivar variable is closely relatedwith group membership, thus removed.
+```{r}
+wineTrain <- wine[,which(names(wine)!="Cultivar")]
+```
+
+In the K-means method, we need to define the number of clusters, algorithm assigns each data to as much as clusters. K-means is applied with kmeans() function. To cluster data, use two as its argument. Please note that K-means does not work for categorical data. 
+- first argument: two to cluster data
+- second argument: number of clusters
+```{r}
+set.seed(278613)
+wineK3 <- kmeans(x=wineTrain,centers=3)
+wineK3
+```
+
+K-means can be visualized by plot.kmeans() function in useful package into two dimension. 
+```{r}
+require(useful)
+plot(wineK3,data=wineTrain)
+```
+
+When the cultivar column is truely the membership column, we should be able to classify it by different color/shape
+```{r}
+plot(wineK3,data=wine,class="Cultivar")
+```
+
+K-means can be applied with random initial values, using nstart argument.The result didn't change, but generally changes in different dataset. 
+
+```{r}
+set.seed(278613)
+wineK3N25 <- kmeans(wineTrain,centers=3,nstart=25)
+wineK3$size
+wineK3N25$size
+```
+
+Selecting appropriate number of clusters is crucial to divide data  well. The Hartigan rule enables us to compare K in-cluster squares and K+1 in-cluster squares. If the value exceeds 10, we interpret K+1 should be tested, and FitKMeans() function plots the results.
+- useful package: FitKMeans
+
+```{r}
+wineBest <- FitKMeans(wineTrain,max.cluster=20,nstart=25,
+                      seed=278613)
+`wineBest
+PlotHartigan(wineBest)
+``
+
+
+Based on the above results, 
 
