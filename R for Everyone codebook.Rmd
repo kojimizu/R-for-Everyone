@@ -3981,10 +3981,45 @@ Selecting appropriate number of clusters is crucial to divide data  well. The Ha
 ```{r}
 wineBest <- FitKMeans(wineTrain,max.cluster=20,nstart=25,
                       seed=278613)
-`wineBest
+wineBest
 PlotHartigan(wineBest)
-``
+```
+
+Based on the above results, 13 clusters seem to be the best, but highly dependent on individual case. For example, in case three species are already known for the dataset, we use three clusters. 
+
+```{r}
+table(wine$Cultivar,wineK3N25$cluster)
+plot(table(wine$Cultivar,wineK3N25$cluster),
+     main="Confusion Matrix for Wine Clustering",
+     xlab="Cultivar",ylab="Cluster")
+```
+
+Aliternative method to Hartigan rule is the GAP statistics comparing the in-clustering uncomparability (clustering bootstrapped from dataset). This can be calculated by clusGap() function.
+
+```{r}
+require(cluster)
+
+theGap <- clusGap(wineTrain,FUNcluster=pam,K.max=20)
+gapDF <- as.data.frame(theGap$Tab)
+gapDF
+
+ggplot(gapDF,aes(x=1:nrow(gapDF)))+
+  geom_line(aes(y=logW),color="blue")+
+  geom_point(aes(y=logW),color="blue")+
+  geom_line(aes(y=E.logW),color="green")+
+  geom_point(aes(y=E.logw),color="green")+
+  labs(x="Number of Clusters")
 
 
-Based on the above results, 
+```
+
+## 22.2 PAM
+K-means method has two problems:
+(1)
+ K-means does not work for cateogorical data(2)
+ K-means is affected by outliers
+
+Alternative method is K-medoids, taking actual value in cluster instead of average value. K-medoids is consistent with outliers as well. 
+
+The main example is Partitioning Around MEdoids (PAM).
 
