@@ -4015,11 +4015,182 @@ ggplot(gapDF,aes(x=1:nrow(gapDF)))+
 
 ## 22.2 PAM
 K-means method has two problems:
-(1)
- K-means does not work for cateogorical data(2)
- K-means is affected by outliers
+(1) K-means does not work for cateogorical data
+(2) K-means is affected by outliers
 
 Alternative method is K-medoids, taking actual value in cluster instead of average value. K-medoids is consistent with outliers as well. 
 
-The main example is Partitioning Around MEdoids (PAM).
+The main example is Partitioning Around Medoids (PAM).
+Cluster package includes pam() function, and we use WDI data. 
+```{r}
+indicators <- c("BX.KLT.DINV.WD.GD.ZS","NY.GDP.DEFL.KD.ZG",
+                "NY.GDP.MKTP.CD","NY.GDP.MKTP.KD.ZG",
+                "NY.GDP.PCAP.CD","NY.GDP.PCAP.KD.ZG",
+                "TG.VAL.TOTL.GD.ZS")
+require(WDI)
 
+# extract data for countries in te list
+wbInfo <- WDI(country="all",indicator=indicators, start=2011,
+              end=2011,extra=TRUE)
+View(wbInfo)
+
+# exclude aggregated values
+wbInfo <- wbInfo[wbInfo$region !="Aggregates",]
+# exclude country with NA for all indicators
+wbInfo <- wbInfo[which(rowSums(!is.na(wbInfo[,indicators]))>0),]
+# exclude column without ISO
+wbInfo <- wbInfo[!is.na(wbInfo$iso2c),]
+```
+
+Even though the dataset has some mising values, but we can still apply PAM. Before conducting clustering algorithm, we clean dataset. 
+```{r}
+# rownames set
+rownames(wbInfo) <- wbInfo$iso2c
+
+# region into factor, revenue/lending into factor
+wbInfo$region <- factor(wbInfo$region)
+wbInfo$income <- factor(wbInfo$income)
+wbInfo$lending <- factor(wbInfo$lending)
+```
+
+Newt, we apply pam() function in the cluster package.
+- line: data, line group: cluster
+- well fitted: large positive line, non-fitted: small line or negative
+```{r}
+keep.cols <- which(!names(wbInfo)%in% c("iso2c","country","year","capital","iso3c"))
+
+# cluster apply
+require(cluster)
+wbPam <- pam(x=wbInfo[,keep.cols],k=12,keep.diss=TRUE,
+             keep.data=TRUE)
+wbPam$medoids
+```
+
+```{r}
+plot(wbPam,which.plots=2,main="")
+```
+
+```{r}
+download.file(url="http://jaredlander.com/data/worldmap.zip",
+              destfile="C:/Users/kojiKM.mizumura/Desktop/Data Science/2. R for Everyone/worldmap.zip",method="curl")
+
+unzip(zipfile="C:/Users/kojiKM.mizumura/Desktop/Data Science/2. R for Everyone/worldmap.zip",exdir="data")
+```
+
+In four files, we need to check wether we can utilize them 
+```{r}
+install.packages("maptools")
+require(maptools)
+world <- readShapeSpatial("C:/Users/kojiKM.mizumura/Desktop/Data Science/2. R for Everyone/data/world_country_admin_boundary_shapefile_with_fips_codes")
+head(world@data)
+```
+
+The world bank shpefile two digits are not consistent with WDI package, so we need to match.
+```{r}
+require(plyr)
+world@data$FipsCntry <- as.character(
+  revalue(world@data$FipsCntry,
+          replace=c(AU="AT",AS="AU",VN="VN",BM="MM",SP="ES",
+                    PO="PT",IC="IL",SF="ZA",TU="TR",IZ="IQ",
+                    UK="GB",EI="IE",SU="SD",MA="MG",MO="MA",
+                    JA="JP",SW="SE",SN="SG"))
+)
+
+```
+
+To apply ggplot2, we also need to convert shpefile into data.frame.
+```{r}
+# id by rownames
+world@data$id <- rownames(world@data)
+# fortify function to change shapefile into data.frame
+
+require(ggplot2)
+require(rgeos)
+world.df <- fortify(world,region="id")
+head(world.df)
+
+world.df <- join(world.df,
+                 world@data[,c("id","CntryName","FipsCntry")],
+                 by="id")
+head(world.df)
+```
+
+Finally, we can combine clustering results and original WDI data. 
+```{r}
+clusterMembership <- data.frame(FipsCntry=names(wbPam$clustering),
+                                Cluster=wbPam$clustering,
+                                stringsAsFactors = F)
+head(clusterMembership)
+```
+
+```{r}
+world.df <- join(world.df,clusterMembership,by="FipsCntry")
+world.df$Cluster <- as.character(world.d$Cluster)
+world.df$Cluster <- factor(world.df$Cluster,levels=1:12)
+
+ggplot()+
+  geom_polygon(data=world.df,aes(x=long,y=lat,group=group,groupfill=Cluster,color=cluster))+
+  labs(x=NULL,y=NULL)+coord_equal()+
+  theme(panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        axis.text.x=element_blank(),axis.text.y=element_blank(),
+        axix.ticks=element_blank(),panel.background=element_blank())
+
+# we need to set cluster number for pam
+wbPam$clusinfo
+
+```
+
+## 22,3 Hierachical Clustering 
+We don' need to set clustering number for hierachical clustering. The level of cluster is more detailed as we move to the root. 
+
+- dataset: wine 
+- function: hclust()*
+* as its difficult to check the data by tesxt, node is labeled. 
+```{r}
+wineH <- hclust(d=dist(wineTrain))
+plot(wineH)
+```
+
+Hierachical clustering works for categorical data, but we need to calculate di-similarit.
+```{r}
+# calculate distance 
+keep.cols <- which(!names(wbInfo)%in% c("iso2c","country","year","capital","iso3c"))
+wbDaisy <- daisy(x=wbInfo[,keep.cols])
+wbH <- hclust(wbDaisy)
+plot(wbH)
+```
+
+There are several ways to calculate distance between clusters, which affect clustering results. The below chart shows three different linkage methods, single/average/centroid. Average linkage is generally the best. 
+```{r}
+wineH1 <- hclust(dist(wineTrain),method="single")
+wineH2 <- hclust(dist(wineTrain),method="complete")
+wineH3 <- hclust(dist(wineTrain),method="average")
+wineH4 <- hclust(dist(wineTrain),method="centroid")
+
+plot(wineH1,labels=FALSE,main="single")
+plot(wineH2,labels=FALSE,main="Complete")
+plot(wineH3,labels=FALSE,main="Average")
+plot(wineH4,labels=FALSE,main="Centroid")
+```
+
+We are going to cut trees generated by hierachical clustering, and divide data into clustering groups.There are two methods, (1) set cluster number we gonna cut trees, (2) we set how many clusters to be made. 
+
+(1) set cluster number to be cut
+```{r}
+# plot tree
+plot(wineH)
+# divide the data into three clusters
+rect.hclust(wineH,k=3,border="red")
+# divide the data into 13 clusters
+rect.hclust(wineH,k=13,border="blue")
+```
+
+(2) set height of cluster
+```{r}
+plot(wineH)
+rect.hclust(wineH,h=200,border="red")
+rect.hclust(wineH,h=800, border="blue")
+```
+
+END 
